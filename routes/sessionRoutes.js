@@ -10,7 +10,7 @@ const router = express.Router();
 const urlencodedParser = bodyParser.urlencoded({ extended: false });
 
 // signup new users
-router.post("/create", urlencodedParser, async (req, res, next) => {
+router.post("/new", urlencodedParser, async (req, res, next) => {
   const { email, fullName, password } = req.body;
   try {
     const existingUser = await User.findOne({ email });
@@ -23,7 +23,6 @@ router.post("/create", urlencodedParser, async (req, res, next) => {
     const confirmDigest = await bcrypt.hash(confirmToken, 8);
     const hashedPassword =
       password.length > 0 ? await bcrypt.hash(password, 8) : "";
-    console.log(hashedPassword);
 
     const newUser = new User({
       email,
@@ -32,10 +31,10 @@ router.post("/create", urlencodedParser, async (req, res, next) => {
       confirmDigest,
     });
 
-    const results = await newUser.save();
-
+    const savedUser = await newUser.save();
+    const mes = savedUser ? "success" : "failed";
     //here we will insert code to send email for confirmation
-    res.status(200).json({ results });
+    res.status(200).json({ message: mes });
   } catch (err) {
     res.status(404).json({ message: err.errors });
   }
