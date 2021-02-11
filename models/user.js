@@ -8,7 +8,7 @@ const validEmail = function (email) {
 };
 
 const emailValidation = [
-  { validator: validEmail, message: "ugyldig epstadresse" },
+  { validator: validEmail, message: "ugyldig epostadresse" },
 ];
 
 const userSchema = new mongoose.Schema({
@@ -55,7 +55,8 @@ userSchema.methods.authenticated = function (token, digest) {
   if (!digest) {
     return false;
   }
-  return bcrypt.compareSync(token, digest); // to be refined with async compare as compareSync may block the event loop
+  const auth = await bcrypt.compare(token, digest)
+  return auth
 };
 
 userSchema.virtual("firstName").get(function () {

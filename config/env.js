@@ -7,7 +7,7 @@ export default {
     //mongodb connection settings
 
     dbURI: keys.DevMongodbURI,
-
+    tksecret: keys.tokenSecret,
     //server details
     server: {
       //host: '127.0.0.1',
