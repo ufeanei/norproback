@@ -51,16 +51,8 @@ const userSchema = new mongoose.Schema({
   },
 });
 
-userSchema.methods.authenticated = function (token, digest) {
-  if (!digest) {
-    return false;
-  }
-  const auth = await bcrypt.compare(token, digest)
-  return auth
-};
-
 userSchema.virtual("firstName").get(function () {
-  return this.fullName.split("")[0];
+  return this.fullName.split(" ")[0];
 });
 
 var User = mongoose.model("User", userSchema);
