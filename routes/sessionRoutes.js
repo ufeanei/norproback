@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 import { nanoid } from "nanoid";
 import bodyParser from "body-parser";
 import jwt from "jsonwebtoken";
+import checkauth from "../middlewares/checkauth.js";
 
 import transporter from "../config/nodemailerTransporter.js";
 import configs from "../config/env.js";
@@ -22,7 +23,7 @@ router.post("/new", urlencodedParser, async (req, res, next) => {
     const existingUser = await User.findOne({ email: xss(email) });
     if (existingUser)
       return res.status(400).json({
-        emailErr: "Din e-post finnes allrede i vart system. Logg inn",
+        message: "Din e-post finnes allrede i vart system. Logg inn",
       });
 
     const confirmToken = nanoid();
@@ -45,12 +46,12 @@ router.post("/new", urlencodedParser, async (req, res, next) => {
       html:
         "<p>Velkommen til Nopro!</p>" +
         "<p>Bekreft e-posten din ved å klikke på følgende lenke eller kopiere den til nettleseren din og trykk på ENTER</p>" +
-        '<a href="http://localhost:3000/confirmemail?email=' +
+        '<a href="http://localhost:5000/session/confirmEmail?email=' +
         savedUser.email +
         "&token=" +
         confirmToken +
         '">' +
-        "https://localhost:3000/confirmemail?email=" +
+        "https://localhost:5000/session/confirmEmail?email=" +
         savedUser.email +
         "&token=" +
         confirmToken +
@@ -75,24 +76,53 @@ router.post("/new", urlencodedParser, async (req, res, next) => {
 // login
 router.post("/login", urlencodedParser, async (req, res, next) => {
   const { email, password } = req.body;
-
-  const user = await User.findOne({ email: xss(email) });
+  const user = await User.findOne({ email: xss(email) }, "-password");
   if (user) {
     const resp = await bcrypt.compare(password, user.password);
+
     if (resp) {
-      console.log(resp);
       let token;
-      token = jwt.sign(
-        { userId: user.id, email: user.email },
-        configs[env].tksecret,
-        { expiresIn: "1hr" }
-      );
-      res.status(201).json({ userid: user.id, email: user.email, token });
+      token = jwt.sign({ userId: user.id }, configs[env].tksecret);
+      res.cookie("tk", token, {
+        expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 14),
+        httpOnly: true, // in production add secure: true for https transmission
+      });
+      user.password = "";
+      res.status(201).json(user);
     } else {
-      res.status(400).json({ emailErr: "Epost eller passord er ugyldig." });
+      res.status(400).json({ message: "Epost eller passord er ugyldig." });
     }
   } else {
-    res.status(400).json({ emailErr: "Epost eller passord er ugyldig." });
+    res.status(400).json({ message: "Epost eller passord er ugyldig." });
+  }
+});
+
+// logout
+router.get("/any", checkauth, (req, res) => {
+  res.status(201).json({ message: "success" });
+});
+
+router.get("/confirmEmail", async (req, res) => {
+  const { email, token } = req.query;
+  const user = await User.findOne({ email }, "-password -confirmDigest");
+  if (user && !user.emailConfirmed) {
+    const check = await bcrypt.compare(token, user.confirmDigest);
+    if (check) {
+      const updatedUser = await User.updateOne(
+        { _id: user.id },
+        { $set: { emailConfirmed: true } }
+      );
+      let token;
+      token = jwt.sign({ userId: user.id }, configs[env].tksecret);
+      res.cookie("tk", token, {
+        expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 14),
+        httpOnly: true, // in production add secure: true for https transmission
+      });
+
+      res.status(201).json({ user, token });
+    } else {
+      res.status(401).json({ message: "invalid token" });
+    }
   }
 });
 

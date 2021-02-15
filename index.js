@@ -1,8 +1,10 @@
 import express from "express";
 import bodyParser from "body-parser";
 import mongoose from "mongoose";
+import cookieParser from "cookie-parser";
 import siteConfigs from "./config/env.js";
 import sessionRoutes from "./routes/sessionRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
 
 import cors from "cors";
 const app = express();
@@ -23,7 +25,10 @@ mongoose
 //*************************************** */
 
 //************general middlewares */
-app.use(cors());
-app.use(bodyParser.json({ limit: "30mb", extended: true }));
+app.enable("trust proxy");
+app.use(cors({ origin: "http://localhost:3000", credentials: true }));
+app.use(bodyParser.json({ limit: "10mb", extended: true }));
+app.use(cookieParser()); // parsing incoming cookies
 
 app.use("/session", sessionRoutes);
+app.use("/users", userRoutes);
