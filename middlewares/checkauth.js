@@ -9,10 +9,9 @@ const checkauth = (req, res, next) => {
     if (token) {
       decodedData = jwt.verify(token, configs[env].tksecret);
       req.userId = decodedData.userId;
-      console.log(req.userId);
+
       next();
     } else {
-      console.log("error no token");
       res.status(200).json({ message: "Vennligst logg inn først" });
     }
   } catch (err) {

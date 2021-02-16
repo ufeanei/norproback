@@ -76,7 +76,7 @@ router.post("/new", urlencodedParser, async (req, res, next) => {
 // login
 router.post("/login", urlencodedParser, async (req, res, next) => {
   const { email, password } = req.body;
-  const user = await User.findOne({ email: xss(email) }, "-password");
+  const user = await User.findOne({ email: xss(email) });
   if (user) {
     const resp = await bcrypt.compare(password, user.password);
 
@@ -99,17 +99,19 @@ router.post("/login", urlencodedParser, async (req, res, next) => {
 
 // logout
 router.get("/any", checkauth, (req, res) => {
+  res.cookies("tk", "");
   res.status(201).json({ message: "success" });
 });
 
 router.get("/confirmEmail", async (req, res) => {
   const { email, token } = req.query;
-  const user = await User.findOne({ email }, "-password -confirmDigest");
+  const user = await User.findOne({ email });
   if (user && !user.emailConfirmed) {
     const check = await bcrypt.compare(token, user.confirmDigest);
+
     if (check) {
       const updatedUser = await User.updateOne(
-        { _id: user.id },
+        { _id: user._id },
         { $set: { emailConfirmed: true } }
       );
       let token;
@@ -118,11 +120,18 @@ router.get("/confirmEmail", async (req, res) => {
         expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 14),
         httpOnly: true, // in production add secure: true for https transmission
       });
-
-      res.status(201).json({ user, token });
+      res.status(301).redirect(configs[env].accConfirmRedirectUrl);
     } else {
-      res.status(401).json({ message: "invalid token" });
+      res
+        .status(301)
+        .redirect(
+          configs[env].accConfirmRedirectUrl + "?m=Bekreftelseslink er ugyldig"
+        );
     }
+  } else {
+    res
+      .status(301)
+      .redirect(configs[env].accConfirmRedirectUrl + "?m=E-post er bekreftet");
   }
 });
 
