@@ -209,23 +209,68 @@ router.get("/resetform", async (req, res) => {
           "http://localhost:5000/session/resetpassform?email=" + user.email
         );
     } else if (!user.emailConfirmed) {
-      res
-        .status(201)
-        .json({
-          message:
-            "E-post ikke bekreftet. Kontroller innboksen eller spam-mappen for bekreftelsese-post",
-        });
+      res.status(201).json({
+        message:
+          "E-post ikke bekreftet. Kontroller innboksen eller spam-mappen for bekreftelsese-post",
+      });
     } else {
-      res
-        .status(401)
-        .json({
-          message:
-            "Tilbakestillingsnøkkelen er feil.Send en ny tilbakestillingsforespørsel",
-        });
+      res.status(401).json({
+        message:
+          "Tilbakestillingsnøkkelen er feil.Send en ny tilbakestillingsforespørsel",
+      });
     }
   } else {
     res.status(401).json({ message: "Epostaddressen er ugyldig" });
   }
 });
 
+router.post("/resetpassword", async (req, res) => {
+  const { email, password, passwordconfirm } = req.body;
+  try {
+    if (password && passwordconfirm) {
+      if (password === passwordconfirm) {
+        const user = await User.findOne({ email });
+        if (user) {
+          const updatedUser = User.updateOne(
+            { _id: user._id },
+            { $set: { password: bcrypt.hash(password, 8) } }
+          );
+          res
+            .status(301)
+            .redirect("/session/login?m=vennligst logg inn med nytt passord");
+        } else {
+          res.status(401).json({ message: "Epostaddressen er ugyldig" });
+        }
+      } else {
+        res.status(401).json({ message: "Passordene stemmer ikke overens" });
+      }
+    } else {
+      res
+        .status(401)
+        .json({ message: "Bruk skjemaet for å sende forespørsel" });
+    }
+  } catch (err) {
+    res.status(301).redirect("http://localhost:5000/page500");
+  }
+});
+
+router.post("/changepassword", checkauth, async (req, res) => {
+  const pw = req.body.pass.trim();
+  const cpw = req.body.confirmpass.trim();
+
+  const userId = req.userId;
+  try {
+    if (pw && cpw && pw === cpw) {
+      const user = User.updateOne(
+        { _id: userId },
+        { $set: { password: bcrypt.hash(password, 8) } }
+      );
+      res.status(201).json({ message: "Ditt passord har blitt oppdatert." });
+    } else {
+      res.status(401).json({ message: "Passordene stemmer ikke overens" });
+    }
+  } catch (err) {
+    res.status(301).redirect("http://localhost:5000/page500");
+  }
+});
 export default router;
