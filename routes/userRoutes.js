@@ -7,7 +7,7 @@ router.get("/currentUser", checkauth, async (req, res) => {
   const userId = req.userId;
   const loggedUser = await User.findById(
     userId,
-    "-password, -emailConfirmed -confirmDigest"
+    "-password -emailConfirmed -confirmDigest"
   );
 
   if (loggedUser) {

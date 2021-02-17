@@ -120,7 +120,9 @@ router.get("/confirmEmail", async (req, res) => {
         expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 14),
         httpOnly: true, // in production add secure: true for https transmission
       });
-      res.status(301).redirect(configs[env].accConfirmRedirectUrl);
+      res
+        .status(301)
+        .redirect(configs[env].accConfirmRedirectUrl + "?m=Konto bekreftet");
     } else {
       res
         .status(301)
@@ -131,7 +133,98 @@ router.get("/confirmEmail", async (req, res) => {
   } else {
     res
       .status(301)
-      .redirect(configs[env].accConfirmRedirectUrl + "?m=E-post er bekreftet");
+      .redirect(
+        configs[env].accConfirmRedirectUrl +
+          "?m=Denne lenken er ikke lenger gyldig"
+      );
+  }
+});
+
+router.post("/recoverRequest", urlencodedParser, async (req, res) => {
+  const { email } = req.body;
+  try {
+    if (email) {
+      const user = await User.findOne({ email });
+      if (user) {
+        const rt = nanoid();
+        const resetDigest = await bcrypt.hash(rt, 8);
+        const updatedUser = await User.updateOne(
+          { _id: user._id },
+          { $set: { resetDigest, resetSentAt: Date.now() } }
+        );
+
+        let mailOptions = {
+          from: "austinufei@gmail.com",
+          to: updatedUser.email,
+          subject: "Tilbakestill passord",
+          html:
+            "<h1>Tilbakestille passordet</h1>" +
+            "<p>For å tilbakestille passordet ditt, trykk på følgende lenke:</p>" +
+            '<a href="http://localhost:5000/session/resetpass?email=' +
+            updatedUser.email +
+            "&resettoken=" +
+            rt +
+            '">' +
+            "http://localhost:5000/session/resetpass?email=" +
+            updatedUser.email +
+            "&resettoken=" +
+            rt +
+            "</a> <br> <p>MVH</p><p>Nopro</p>",
+        };
+
+        transporter.sendMail(mailOptions, function (error, info) {
+          console.log(info);
+          if (error) {
+            console.log(error);
+          }
+        });
+
+        res.status(201).json({
+          message:
+            "En melding med instruksjoner om hvordan du tilbakestiller passordet ditt har blitt sendt til deg via e-post. Kontroller innboksen eller spam-mappen",
+        });
+      }
+    }
+  } catch (err) {
+    res.status(302).redirect("http://localhost:5000/page500");
+  }
+});
+
+router.get("/resetform", async (req, res) => {
+  const user = await User.findOne({ email: req.query.email });
+  if (user) {
+    if ((Date.now() - user.resetSentAt.getTime()) / 1000 > 7200) {
+      res.status(401).json({
+        message:
+          "Tilbakestillingsnøkkelen er utgått. Send en ny tilbakestillingsforespørsel",
+      });
+    } else if (
+      user &&
+      user.emailConfirmed &&
+      bcrypt.compareSync(req.query.resetToken, user.restDigest)
+    ) {
+      res
+        .status(301)
+        .redirect(
+          "http://localhost:5000/session/resetpassform?email=" + user.email
+        );
+    } else if (!user.emailConfirmed) {
+      res
+        .status(201)
+        .json({
+          message:
+            "E-post ikke bekreftet. Kontroller innboksen eller spam-mappen for bekreftelsese-post",
+        });
+    } else {
+      res
+        .status(401)
+        .json({
+          message:
+            "Tilbakestillingsnøkkelen er feil.Send en ny tilbakestillingsforespørsel",
+        });
+    }
+  } else {
+    res.status(401).json({ message: "Epostaddressen er ugyldig" });
   }
 });
 
