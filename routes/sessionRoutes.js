@@ -46,16 +46,19 @@ router.post("/new", urlencodedParser, async (req, res, next) => {
       html:
         "<p>Velkommen til Nopro!</p>" +
         "<p>Bekreft e-posten din ved å klikke på følgende lenke eller kopiere den til nettleseren din og trykk på ENTER</p>" +
-        '<a href="http://localhost:5000/session/confirmEmail?email=' +
+        '<a href="' +
+        configs[env].backUrl +
+        "/session/confirmEmail?email=" +
         savedUser.email +
         "&token=" +
         confirmToken +
         '">' +
-        "https://localhost:5000/session/confirmEmail?email=" +
+        configs[env].backUrl +
+        "/session/confirmEmail?email=" +
         savedUser.email +
         "&token=" +
         confirmToken +
-        "</a> <br><p>MVH</p><p>Oilhub</p>",
+        "</a> <br><p>MVH</p><p>Nopro</p>",
     };
 
     transporter.sendMail(mailOptions, function (error, info) {
@@ -98,9 +101,9 @@ router.post("/login", urlencodedParser, async (req, res, next) => {
 });
 
 // logout
-router.get("/any", checkauth, (req, res) => {
+router.get("/logout", checkauth, (req, res) => {
   res.cookies("tk", "");
-  res.status(201).json({ message: "success" });
+  res.status(301).redirect(configs[env].frontUrl + "/page500");
 });
 
 router.get("/confirmEmail", async (req, res) => {
@@ -122,29 +125,34 @@ router.get("/confirmEmail", async (req, res) => {
       });
       res
         .status(301)
-        .redirect(configs[env].accConfirmRedirectUrl + "?m=Konto bekreftet");
+        .redirect(
+          configs[env].frontUrl + "/session/confirmlogin?m=Konto bekreftet"
+        );
     } else {
       res
         .status(301)
         .redirect(
-          configs[env].accConfirmRedirectUrl + "?m=Bekreftelseslink er ugyldig"
+          configs[env].frontUrl +
+            "/session/confirmlogin?m=Bekreftelseslink er ugyldig"
         );
     }
   } else {
     res
       .status(301)
       .redirect(
-        configs[env].accConfirmRedirectUrl +
-          "?m=Denne lenken er ikke lenger gyldig"
+        configs[env].frontUrl +
+          "/session/confirmlogin?m=Denne lenken er ikke lenger gyldig"
       );
   }
 });
 
 router.post("/recoverRequest", urlencodedParser, async (req, res) => {
   const { email } = req.body;
+  console.log(email);
   try {
     if (email) {
       const user = await User.findOne({ email });
+      console.log(user);
       if (user) {
         const rt = nanoid();
         const resetDigest = await bcrypt.hash(rt, 8);
@@ -155,18 +163,21 @@ router.post("/recoverRequest", urlencodedParser, async (req, res) => {
 
         let mailOptions = {
           from: "austinufei@gmail.com",
-          to: updatedUser.email,
+          to: user.email,
           subject: "Tilbakestill passord",
           html:
             "<h1>Tilbakestille passordet</h1>" +
             "<p>For å tilbakestille passordet ditt, trykk på følgende lenke:</p>" +
-            '<a href="http://localhost:5000/session/resetpass?email=' +
-            updatedUser.email +
+            '<a href="' +
+            configs[env].backUrl +
+            "/session/resetpassform?email=" +
+            user.email +
             "&resettoken=" +
             rt +
             '">' +
-            "http://localhost:5000/session/resetpass?email=" +
-            updatedUser.email +
+            configs[env].backUrl +
+            "/session/resetpassform?email=" +
+            user.email +
             "&resettoken=" +
             rt +
             "</a> <br> <p>MVH</p><p>Nopro</p>",
@@ -184,43 +195,65 @@ router.post("/recoverRequest", urlencodedParser, async (req, res) => {
             "En melding med instruksjoner om hvordan du tilbakestiller passordet ditt har blitt sendt til deg via e-post. Kontroller innboksen eller spam-mappen",
         });
       }
+    } else {
+      res.status(201).json({
+        message: "You should receive an email if you are in our system",
+      });
     }
   } catch (err) {
-    res.status(302).redirect("http://localhost:5000/page500");
+    res.status(302).redirect(configs[env].page500);
   }
 });
 
-router.get("/resetform", async (req, res) => {
-  const user = await User.findOne({ email: req.query.email });
-  if (user) {
-    if ((Date.now() - user.resetSentAt.getTime()) / 1000 > 7200) {
-      res.status(401).json({
-        message:
-          "Tilbakestillingsnøkkelen er utgått. Send en ny tilbakestillingsforespørsel",
-      });
-    } else if (
-      user &&
-      user.emailConfirmed &&
-      bcrypt.compareSync(req.query.resetToken, user.restDigest)
-    ) {
+router.get("/resetpassform", async (req, res) => {
+  try {
+    const user = await User.findOne({ email: req.query.email });
+
+    if (user) {
+      if ((Date.now() - user.resetSentAt.getTime()) / 1000 > 7200) {
+        res
+          .status(301)
+          .redirect(
+            configs[env].frontUrl +
+              "/session/forgotpass?m=Tilbakestillingsnøkkelen er utgått. Send en ny tilbakestillingsforespørsel"
+          );
+      } else if (
+        user &&
+        user.emailConfirmed &&
+        bcrypt.compareSync(req.query.resettoken, user.resetDigest)
+      ) {
+        console.log(bcrypt.compareSync(req.query.resettoken, user.resetDigest));
+        res
+          .status(301)
+          .redirect(
+            configs[env].frontUrl + "/session/resetpassform?email=" + user.email
+          );
+      } else if (!user.emailConfirmed) {
+        res
+          .status(301)
+          .redirect(
+            configs[env].frontUrl +
+              "/session/forgotpass?m=E-post ikke bekreftet. Kontroller innboksen eller spam-mappen for bekreftelsese-post"
+          );
+      } else {
+        res
+          .status(301)
+          .redirect(
+            configs[env].frontUrl +
+              "/session/forgotpass?m=Tilbakestillingsnøkkelen er feil. Send en ny tilbakestillingsforespørsel"
+          );
+      }
+    } else {
       res
         .status(301)
         .redirect(
-          "http://localhost:5000/session/resetpassform?email=" + user.email
+          configs[env].frontUrl +
+            "session/forgotpass?m=Epostaddressen er ugyldig"
         );
-    } else if (!user.emailConfirmed) {
-      res.status(201).json({
-        message:
-          "E-post ikke bekreftet. Kontroller innboksen eller spam-mappen for bekreftelsese-post",
-      });
-    } else {
-      res.status(401).json({
-        message:
-          "Tilbakestillingsnøkkelen er feil.Send en ny tilbakestillingsforespørsel",
-      });
     }
-  } else {
-    res.status(401).json({ message: "Epostaddressen er ugyldig" });
+  } catch (err) {
+    console.log(err);
+    res.status(301).redirect(configs[env].page500);
   }
 });
 
@@ -245,12 +278,10 @@ router.post("/resetpassword", async (req, res) => {
         res.status(401).json({ message: "Passordene stemmer ikke overens" });
       }
     } else {
-      res
-        .status(401)
-        .json({ message: "Bruk skjemaet for å sende forespørsel" });
+      res.status(301).redirect(configs[env].page500);
     }
   } catch (err) {
-    res.status(301).redirect("http://localhost:5000/page500");
+    res.status(301).redirect(configs[env].page500);
   }
 });
 
@@ -270,7 +301,7 @@ router.post("/changepassword", checkauth, async (req, res) => {
       res.status(401).json({ message: "Passordene stemmer ikke overens" });
     }
   } catch (err) {
-    res.status(301).redirect("http://localhost:5000/page500");
+    res.status(301).redirect(configs[env].page500);
   }
 });
 export default router;
