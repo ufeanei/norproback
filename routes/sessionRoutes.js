@@ -10,6 +10,7 @@ import configs from "../config/env.js";
 import xss from "xss"; // for sanitizing inputs
 
 import User from "../models/user.js";
+import crypto from "crypto";
 
 const router = express.Router();
 const env = process.env.NODE_ENV || "development";
@@ -80,6 +81,7 @@ router.post("/new", urlencodedParser, async (req, res, next) => {
 router.post("/login", urlencodedParser, async (req, res, next) => {
   const { email, password } = req.body;
   const user = await User.findOne({ email: xss(email) });
+
   if (user) {
     const resp = await bcrypt.compare(password, user.password);
 
@@ -152,10 +154,13 @@ router.post("/recoverRequest", urlencodedParser, async (req, res) => {
   try {
     if (email) {
       const user = await User.findOne({ email });
-      console.log(user);
+
       if (user) {
         const rt = nanoid();
-        const resetDigest = await bcrypt.hash(rt, 8);
+        const resetDigest = crypto
+          .createHash("sha256")
+          .update(rt)
+          .digest("hex");
         const updatedUser = await User.updateOne(
           { _id: user._id },
           { $set: { resetDigest, resetSentAt: Date.now() } }
@@ -170,15 +175,11 @@ router.post("/recoverRequest", urlencodedParser, async (req, res) => {
             "<p>For å tilbakestille passordet ditt, trykk på følgende lenke:</p>" +
             '<a href="' +
             configs[env].backUrl +
-            "/session/resetpassform?email=" +
-            user.email +
-            "&resettoken=" +
+            "/session/resetpassform/" +
             rt +
             '">' +
             configs[env].backUrl +
-            "/session/resetpassform?email=" +
-            user.email +
-            "&resettoken=" +
+            "/session/resetpassform/" +
             rt +
             "</a> <br> <p>MVH</p><p>Nopro</p>",
         };
@@ -201,13 +202,20 @@ router.post("/recoverRequest", urlencodedParser, async (req, res) => {
       });
     }
   } catch (err) {
+    console.log(err);
     res.status(302).redirect(configs[env].page500);
   }
 });
 
-router.get("/resetpassform", async (req, res) => {
+router.get("/resetpassform/:id", async (req, res) => {
   try {
-    const user = await User.findOne({ email: req.query.email });
+    console.log(req.params.id);
+    const resetDigest = crypto
+      .createHash("sha256")
+      .update(req.params.id)
+      .digest("hex");
+
+    const user = await User.findOne({ resetDigest });
 
     if (user) {
       if ((Date.now() - user.resetSentAt.getTime()) / 1000 > 7200) {
@@ -217,16 +225,11 @@ router.get("/resetpassform", async (req, res) => {
             configs[env].frontUrl +
               "/session/forgotpass?m=Tilbakestillingsnøkkelen er utgått. Send en ny tilbakestillingsforespørsel"
           );
-      } else if (
-        user &&
-        user.emailConfirmed &&
-        bcrypt.compareSync(req.query.resettoken, user.resetDigest)
-      ) {
-        console.log(bcrypt.compareSync(req.query.resettoken, user.resetDigest));
+      } else if (user && user.emailConfirmed) {
         res
           .status(301)
           .redirect(
-            configs[env].frontUrl + "/session/resetpassform?email=" + user.email
+            configs[env].frontUrl + "/session/resetpassform/" + req.params.id
           );
       } else if (!user.emailConfirmed) {
         res
@@ -257,51 +260,33 @@ router.get("/resetpassform", async (req, res) => {
   }
 });
 
-router.post("/resetpassword", async (req, res) => {
-  const { email, password, passwordconfirm } = req.body;
+router.post("/resetpassword", urlencodedParser, async (req, res) => {
+  const { password, confirmpassword, token } = req.body;
+
+  const resetDigest = crypto.createHash("sha256").update(token).digest("hex");
   try {
-    if (password && passwordconfirm) {
-      if (password === passwordconfirm) {
-        const user = await User.findOne({ email });
+    if (password && confirmpassword) {
+      if (password.trim() === confirmpassword.trim()) {
+        const user = await User.findOne({ resetDigest });
+
         if (user) {
           const updatedUser = User.updateOne(
             { _id: user._id },
             { $set: { password: bcrypt.hash(password, 8) } }
           );
-          res
-            .status(301)
-            .redirect("/session/login?m=vennligst logg inn med nytt passord");
+          res.status(201).json({ message: "success" });
         } else {
-          res.status(401).json({ message: "Epostaddressen er ugyldig" });
+          res.status(401).json({ message: "Ugyldig token" });
         }
       } else {
         res.status(401).json({ message: "Passordene stemmer ikke overens" });
       }
     } else {
-      res.status(301).redirect(configs[env].page500);
+      res.status(401).json({ message: "serverfeil" });
     }
   } catch (err) {
-    res.status(301).redirect(configs[env].page500);
+    res.status(401).json({ message: "serverfeil. Prøv igjen senere" });
   }
 });
 
-router.post("/changepassword", checkauth, async (req, res) => {
-  const pw = req.body.pass.trim();
-  const cpw = req.body.confirmpass.trim();
-
-  const userId = req.userId;
-  try {
-    if (pw && cpw && pw === cpw) {
-      const user = User.updateOne(
-        { _id: userId },
-        { $set: { password: bcrypt.hash(password, 8) } }
-      );
-      res.status(201).json({ message: "Ditt passord har blitt oppdatert." });
-    } else {
-      res.status(401).json({ message: "Passordene stemmer ikke overens" });
-    }
-  } catch (err) {
-    res.status(301).redirect(configs[env].page500);
-  }
-});
 export default router;

@@ -38,7 +38,7 @@ const userSchema = new mongoose.Schema({
   blockedUsers: [mongoose.Schema.Types.ObjectId],
   city: String,
   owner: { type: Boolean, default: false },
-  profilePic: String,
+  profilePic: Buffer,
   createdAt: { type: Date, default: Date.now() },
   emailConfirmed: { type: Boolean, default: false },
   confirmDigest: String,
