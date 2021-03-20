@@ -2,6 +2,19 @@ import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import { nanoid } from "nanoid";
 
+var expSchema = new mongoose.Schema({
+  toMonth: String,
+  toYear: String,
+  fromMonth: String,
+  fromYear: String,
+  fromDate: Date,
+  toDate: Date,
+  company: String,
+  jobTitle: String,
+  area: String,
+  expId: mongoose.Schema.Types.ObjectId,
+});
+
 const validEmail = function (email) {
   let regx = /\S+@\S+\.\S+/;
   return regx.test(email);
@@ -38,7 +51,7 @@ const userSchema = new mongoose.Schema({
   blockedUsers: [mongoose.Schema.Types.ObjectId],
   city: String,
   owner: { type: Boolean, default: false },
-  profilePic: Buffer,
+  profilePic: String,
   createdAt: { type: Date, default: Date.now() },
   emailConfirmed: { type: Boolean, default: false },
   confirmDigest: String,
@@ -49,6 +62,8 @@ const userSchema = new mongoose.Schema({
     companyid: mongoose.Schema.Types.ObjectId,
     comName: String,
   },
+
+  experiences: [expSchema],
 });
 
 userSchema.virtual("firstName").get(function () {

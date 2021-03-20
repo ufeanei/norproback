@@ -54,11 +54,10 @@ router.post(
           { _id: id },
           { $set: { profilePic: req.body.pic } }
         );
-        console.log(result);
 
-        res.status(201).json({ message: "uploaded" });
+        res.json({ message: "uploaded" });
       } else {
-        res.status(201).json({ message: "serverfeil. prøv senere" });
+        res.json({ message: "serverfeil. prøv senere" });
       }
     } catch (err) {
       res.status(201).json({ message: "serverfeil. prøv senere" });
