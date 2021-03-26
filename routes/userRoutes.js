@@ -64,4 +64,15 @@ router.post(
     }
   }
 );
+
+//inser business card details into user document
+router.post(
+  "/:id/businesscard",
+  urlencodedParser,
+  checkauth,
+  async (req, res) => {
+    const id = req.userId;
+    const user = await User.updateOne({ _id: id }, { $set: req.body });
+  }
+);
 export default router;
