@@ -3,20 +3,24 @@ import User from "../models/user.js";
 import checkauth from "../middlewares/checkauth.js";
 import bcrypt from "bcrypt";
 import bodyParser from "body-parser";
-const urlencodedParser = bodyParser.urlencoded({ extended: false });
+const urlencodedParser = express.urlencoded({ extended: false });
 const router = express.Router();
 
 router.get("/currentUser", checkauth, async (req, res) => {
   const userId = req.userId;
-  const loggedUser = await User.findById(
-    userId,
-    "-password -emailConfirmed -confirmDigest"
-  );
+  try {
+    const loggedUser = await User.findById(
+      userId,
+      "-password -emailConfirmed -confirmDigest"
+    );
 
-  if (loggedUser) {
-    res.status(200).json({ currentUser: loggedUser });
-  } else {
-    res.status(200).json({ message: "user not logged in" });
+    if (loggedUser) {
+      res.status(200).json({ currentUser: loggedUser });
+    } else {
+      res.status(200).json({ message: "user not logged in" });
+    }
+  } catch (err) {
+    res.status(302).redirect(configs[env].page500);
   }
 });
 router.post("/changepassword", checkauth, async (req, res) => {
@@ -72,7 +76,27 @@ router.post(
   checkauth,
   async (req, res) => {
     const id = req.userId;
-    const user = await User.updateOne({ _id: id }, { $set: req.body });
+
+    try {
+      const user = await User.updateOne({ _id: id }, { $set: req.body });
+      res.json({ message: "success" });
+    } catch (err) {
+      res.json({ message: "serverfeil. prøv senere" });
+    }
   }
 );
+
+router.post("/:id", async (req, res) => {
+  const id = req.params(id);
+  try {
+    const user = await User.findById(id);
+    if (user) {
+      res.status(200).json({ user });
+    } else {
+      res.json({ message: "user not found" });
+    }
+  } catch (err) {
+    res.json({ message: "server error" });
+  }
+});
 export default router;

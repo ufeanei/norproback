@@ -34,7 +34,7 @@ const userSchema = new mongoose.Schema({
     trim: true,
   },
   password: { type: String, required: [true, "må fylles ut"], trim: true },
-  latestjob: String,
+  latestJob: String,
   latestCompany: String,
   totalExp: String,
   jobStatus: String,

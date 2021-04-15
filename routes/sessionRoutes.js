@@ -1,7 +1,7 @@
 import express from "express";
 import bcrypt from "bcrypt";
 import { nanoid } from "nanoid";
-import bodyParser from "body-parser";
+//import bodyParser from "body-parser";
 import jwt from "jsonwebtoken";
 import checkauth from "../middlewares/checkauth.js";
 
@@ -14,7 +14,7 @@ import crypto from "crypto";
 
 const router = express.Router();
 const env = process.env.NODE_ENV || "development";
-const urlencodedParser = bodyParser.urlencoded({ extended: false });
+const urlencodedParser = express.urlencoded({ extended: false });
 
 // signup new users
 router.post("/new", urlencodedParser, async (req, res, next) => {
@@ -202,8 +202,7 @@ router.post("/recoverRequest", urlencodedParser, async (req, res) => {
       });
     }
   } catch (err) {
-    console.log(err);
-    res.status(302).redirect(configs[env].page500);
+    res.json({ message: "server error" });
   }
 });
 
