@@ -1,6 +1,4 @@
 import mongoose from "mongoose";
-import bcrypt from "bcrypt";
-import { nanoid } from "nanoid";
 
 var expSchema = new mongoose.Schema({
   toMonth: String,
@@ -12,6 +10,15 @@ var expSchema = new mongoose.Schema({
   company: String,
   jobTitle: String,
   area: String,
+  expId: mongoose.Schema.Types.ObjectId,
+});
+
+var eduSchema = new mongoose.Schema({
+  school: String,
+  diplom: String,
+  studyField: String,
+  fromYear: String,
+  toYear: String,
   expId: mongoose.Schema.Types.ObjectId,
 });
 
@@ -64,6 +71,7 @@ const userSchema = new mongoose.Schema({
   },
 
   experiences: [expSchema],
+  educations: [eduSchema],
 });
 
 userSchema.virtual("firstName").get(function () {

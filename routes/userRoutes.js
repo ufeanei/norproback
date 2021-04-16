@@ -23,6 +23,8 @@ router.get("/currentUser", checkauth, async (req, res) => {
     res.status(302).redirect(configs[env].page500);
   }
 });
+
+// insert the new password into db
 router.post("/changepassword", checkauth, async (req, res) => {
   const pw = req.body.password.trim();
   const cpw = req.body.confirmpassword.trim();
@@ -44,6 +46,7 @@ router.post("/changepassword", checkauth, async (req, res) => {
   }
 });
 
+// insert userprofile picture to db
 router.post(
   "/:id/profilepic",
   urlencodedParser,
@@ -69,7 +72,7 @@ router.post(
   }
 );
 
-//inser business card details into user document
+//insert business card details into user document
 router.post(
   "/:id/businesscard",
   urlencodedParser,
@@ -86,14 +89,28 @@ router.post(
   }
 );
 
+// get business card data for edit form
+router.get("/getcard", checkauth, async (req, res) => {
+  const userId = req.userId;
+
+  try {
+    const user = await User.findById(
+      userId,
+      "discipline latestJob latestCompany totalExp jobStatus fylke kommune diplomaField fullName highestDiploma"
+    );
+    res.json({ user });
+  } catch (err) {
+    res.json({ message: "sever error" });
+  }
+});
+
+// get a user from the db given hyis id
 router.get("/:id", async (req, res) => {
   const id = req.params.id;
-  console.log(id);
-  console.log(req.originalUrl);
 
   try {
     const user = await User.findById(id);
-    console.log(user);
+
     if (user) {
       res.status(200).json({ user });
     } else {
@@ -104,6 +121,7 @@ router.get("/:id", async (req, res) => {
   }
 });
 
+// get all users from id meet the predicate condition
 router.get("/", async (req, res) => {
   try {
     const users = await User.find({});
