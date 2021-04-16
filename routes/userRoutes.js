@@ -86,10 +86,14 @@ router.post(
   }
 );
 
-router.post("/:id", async (req, res) => {
-  const id = req.params(id);
+router.get("/:id", async (req, res) => {
+  const id = req.params.id;
+  console.log(id);
+  console.log(req.originalUrl);
+
   try {
     const user = await User.findById(id);
+    console.log(user);
     if (user) {
       res.status(200).json({ user });
     } else {
@@ -99,4 +103,14 @@ router.post("/:id", async (req, res) => {
     res.json({ message: "server error" });
   }
 });
+
+router.get("/", async (req, res) => {
+  try {
+    const users = await User.find({});
+    res.json({ users });
+  } catch (err) {
+    res.json({ message: "server error" });
+  }
+});
+
 export default router;
