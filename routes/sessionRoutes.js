@@ -24,7 +24,7 @@ router.post("/new", urlencodedParser, async (req, res, next) => {
     const existingUser = await User.findOne({ email: xss(email) });
     if (existingUser)
       return res.status(400).json({
-        message: "Din e-post finnes allrede i vart system. Logg inn",
+        message: "Din e-post finnes allerede i vart system. Logg inn",
       });
 
     const confirmToken = nanoid();

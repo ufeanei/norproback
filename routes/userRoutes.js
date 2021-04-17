@@ -54,14 +54,12 @@ router.post(
   async (req, res) => {
     const id = req.userId;
     try {
-      const user = await User.findById(id);
+      const result = await User.findOneAndUpdate(
+        { _id: id },
+        { $set: { profilePic: req.body.pic } }
+      );
 
       if (user) {
-        const result = await User.updateOne(
-          { _id: id },
-          { $set: { profilePic: req.body.pic } }
-        );
-
         res.json({ message: "uploaded" });
       } else {
         res.json({ message: "serverfeil. prøv senere" });
@@ -128,6 +126,83 @@ router.get("/", async (req, res) => {
     res.json({ users });
   } catch (err) {
     res.json({ message: "server error" });
+  }
+});
+
+// add a new experience or modify the user's experiences array
+router.post("/newexp", urlencodedParser, checkauth, async (req, res) => {
+  const id = req.userId;
+  try {
+    // if action is insert a new experience
+    const result = await User.findOneAndUpdate(
+      { _id: id },
+      { $push: { experiences: req.body.exp } }
+    );
+
+    if (user) {
+      res.json({ message: " exp added" });
+    } else {
+      res.json({ message: "serverfeil. prøv senere" });
+    }
+  } catch (err) {
+    res.status(201).json({ message: "serverfeil. prøv senere" });
+  }
+});
+
+//add a new education
+router.post("/newedu", urlencodedParser, checkauth, async (req, res) => {
+  const id = req.userId;
+  try {
+    const result = await User.findOneAndUpdate(
+      { _id: id },
+      { $push: { experiences: req.body.exp } }
+    );
+
+    if (user) {
+      res.json({ message: " exp added" });
+    } else {
+      res.json({ message: "serverfeil. prøv senere" });
+    }
+  } catch (err) {
+    res.status(201).json({ message: "serverfeil. prøv senere" });
+  }
+});
+
+// delete an education from education array givin the id of the edu as :id
+router.post("/removeedu/:id", urlencodedParser, checkauth, async (req, res) => {
+  const id = req.userId;
+  try {
+    const user = await User.findOneAndUpdate(
+      { _id: id },
+      { $pull: { education: { _id: req.params.id } } }
+    );
+
+    if (user) {
+      res.json({ message: " edu deleted" });
+    } else {
+      res.json({ message: "serverfeil. prøv senere" });
+    }
+  } catch (err) {
+    res.status(201).json({ message: "serverfeil. prøv senere" });
+  }
+});
+
+// delete an exp from education array givin the id of the edu as :id
+router.post("/removeexp/:id", urlencodedParser, checkauth, async (req, res) => {
+  const id = req.userId;
+  try {
+    const user = await User.findOneAndUpdate(
+      { _id: id },
+      { $pull: { experiences: { _id: req.params.id } } }
+    );
+
+    if (user) {
+      res.json({ message: " exp deleted" });
+    } else {
+      res.json({ message: "serverfeil. prøv senere" });
+    }
+  } catch (err) {
+    res.status(201).json({ message: "serverfeil. prøv senere" });
   }
 });
 
