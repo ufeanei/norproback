@@ -54,7 +54,7 @@ router.post(
   async (req, res) => {
     const id = req.userId;
     try {
-      const result = await User.findOneAndUpdate(
+      const user = await User.findOneAndUpdate(
         { _id: id },
         { $set: { profilePic: req.body.pic } }
       );
@@ -129,18 +129,25 @@ router.get("/", async (req, res) => {
   }
 });
 
-// add a new experience or modify the user's experiences array
-router.post("/newexp", urlencodedParser, checkauth, async (req, res) => {
+// save experience to db
+router.post("/saveexp", urlencodedParser, checkauth, async (req, res) => {
   const id = req.userId;
+  const exp = req.body;
   try {
-    // if action is insert a new experience
-    const result = await User.findOneAndUpdate(
-      { _id: id },
-      { $push: { experiences: req.body.exp } }
-    );
+    let resp;
+    if (!exp._id) {
+      // new exp has no id so push it into experiences array
+      resp = await User.updateOne({ _id: id }, { $push: { experiences: exp } });
+    } else {
+      // it is a modified exp so find it in experiences array and reset all its fields except for id
+      resp = await User.updateOne(
+        { _id: id, "experiences._id": exp._id },
+        { $set: { "experiences.$": exp } }
+      );
+    }
 
-    if (user) {
-      res.json({ message: " exp added" });
+    if (resp) {
+      res.json({ message: "saved" });
     } else {
       res.json({ message: "serverfeil. prøv senere" });
     }
@@ -149,17 +156,26 @@ router.post("/newexp", urlencodedParser, checkauth, async (req, res) => {
   }
 });
 
-//add a new education
-router.post("/newedu", urlencodedParser, checkauth, async (req, res) => {
+//save education object into educations array
+router.post("/saveedu", urlencodedParser, checkauth, async (req, res) => {
   const id = req.userId;
+  const edu = req.body;
+  console.log(edu);
   try {
-    const result = await User.findOneAndUpdate(
-      { _id: id },
-      { $push: { experiences: req.body.exp } }
-    );
+    let resp;
+    if (!edu._id) {
+      // new education so push it into the educations array
+      resp = await User.updateOne({ _id: id }, { $push: { educations: edu } });
+    } else {
+      // modified education so find it and update only its fields
+      resp = await User.updateOne(
+        { _id: id, "educations._id": edu._id },
+        { $set: { "educations.$": edu } }
+      );
+    }
 
-    if (user) {
-      res.json({ message: " exp added" });
+    if (resp) {
+      res.json({ message: "saved" });
     } else {
       res.json({ message: "serverfeil. prøv senere" });
     }
@@ -168,13 +184,13 @@ router.post("/newedu", urlencodedParser, checkauth, async (req, res) => {
   }
 });
 
-// delete an education from education array givin the id of the edu as :id
+// delete an education from education array given the id of the edu as :id
 router.post("/removeedu/:id", urlencodedParser, checkauth, async (req, res) => {
   const id = req.userId;
   try {
     const user = await User.findOneAndUpdate(
       { _id: id },
-      { $pull: { education: { _id: req.params.id } } }
+      { $pull: { educations: { _id: req.params.id } } }
     );
 
     if (user) {
@@ -187,7 +203,7 @@ router.post("/removeedu/:id", urlencodedParser, checkauth, async (req, res) => {
   }
 });
 
-// delete an exp from education array givin the id of the edu as :id
+// delete an exp from experiences array givin the id of the exp as :id
 router.post("/removeexp/:id", urlencodedParser, checkauth, async (req, res) => {
   const id = req.userId;
   try {

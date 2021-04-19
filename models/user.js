@@ -10,7 +10,7 @@ var expSchema = new mongoose.Schema({
   company: String,
   jobTitle: String,
   area: String,
-  expId: mongoose.Schema.Types.ObjectId,
+  descr: String,
 });
 
 var eduSchema = new mongoose.Schema({
@@ -19,7 +19,6 @@ var eduSchema = new mongoose.Schema({
   studyField: String,
   fromYear: String,
   toYear: String,
-  expId: mongoose.Schema.Types.ObjectId,
 });
 
 const validEmail = function (email) {
@@ -65,6 +64,7 @@ const userSchema = new mongoose.Schema({
   rememberDigest: String,
   resetDigest: String,
   resetSentAt: Date,
+  contacts: [mongoose.Schema.Types.ObjectId],
   pageadminto: {
     companyid: mongoose.Schema.Types.ObjectId,
     comName: String,
