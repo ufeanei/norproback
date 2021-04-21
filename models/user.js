@@ -65,10 +65,7 @@ const userSchema = new mongoose.Schema({
   resetDigest: String,
   resetSentAt: Date,
   contacts: [mongoose.Schema.Types.ObjectId],
-  pageadminto: {
-    companyid: mongoose.Schema.Types.ObjectId,
-    comName: String,
-  },
+  pageadminof: [{ type: mongoose.Schema.Types.ObjectId, ref: "Company" }],
 
   experiences: [expSchema],
   educations: [eduSchema],

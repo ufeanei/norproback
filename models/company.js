@@ -1,13 +1,4 @@
-var mongoose = require("mongoose");
-
-var adminSchema = new mongoose.Schema({
-  name: { type: String },
-  position: { type: String },
-  email: String,
-  picture: String,
-  rights: [String],
-  userId: mongoose.Schema.Types.ObjectId,
-});
+import mongoose from "mongoose";
 
 var companySchema = new mongoose.Schema({
   name: {
@@ -22,10 +13,6 @@ var companySchema = new mongoose.Schema({
   },
   sector: { type: String, required: [true, "Select Category"], trim: true },
   comProducts: [String],
-  //comStreetNum: {type: String, required: [true, 'Street and Number is required'], trim: true},
-  //comPostcode: {type: String, required: [true, 'Postcode is  required'], trim: true},
-  //comCity: {type: String, required: [true, 'City is required'], trim: true},
-  //comCountry: {type: String, required: [true, 'Country is required'], trim: true},
   addr: {
     type: String,
     required: [true, "Company name is required"],
@@ -37,8 +24,8 @@ var companySchema = new mongoose.Schema({
 
   followers: { type: Number, default: 0 },
   datePosted: { type: Date, default: Date.now },
-  pageadmins: [adminSchema],
-  pageadminids: [mongoose.Schema.Types.ObjectId],
+
+  pageadminids: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
 });
 
 var Company = mongoose.model("Company", companySchema);
