@@ -45,6 +45,21 @@ router.get("/:id", async (req, res) => {
   }
 });
 
+// get a company by id
+router.get("/", async (req, res) => {
+  const id = req.params.id;
+  try {
+    const companies = await Company.find({});
+    if (companies) {
+      res.json({ companies });
+    } else {
+      res.json({ message: "not found" });
+    }
+  } catch (err) {
+    res.json({ message: "server error" });
+  }
+});
+
 // get a company with given its id
 router.get("/:id", checkauth, async (req, res) => {
   const id = req.params.id;
