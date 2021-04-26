@@ -1,30 +1,30 @@
-var mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 var jobSchema = new mongoose.Schema({
-  jobTitle: {
+  title: {
     type: String,
     required: [true, "Stillingstittel må fylle ut"],
     trim: true,
   },
-  jobCategory: {
+  category: {
     type: String,
     required: [true, "jobbkategori må fylle ut"],
     trim: true,
   },
-  jobType: {
+  jtype: {
     type: String,
     required: [true, "Stillingsstype må fylle ut"],
     trim: true,
   },
-  jobFylke: { type: String, required: [true, "Fylke må fylle ut"] },
-  jobKommune: { type: String, required: [true, "kommune må fylle ut"] },
-  streetAddr: { type: String, trim: true },
+  fylke: { type: String, required: [true, "Fylke må fylle ut"] },
+  kommune: { type: String, required: [true, "kommune må fylle ut"] },
+  addr: { type: String, trim: true },
   descr: {
     type: String,
     required: [true, "Stillingsbeskrivelse må fylle ut"],
     trim: true,
   },
-  applymethod: { type: String, required: [true, " velg søknadsmetode"] },
+  applyMethod: { type: String, required: [true, " velg søknadsmetode"] },
   datePosted: { type: Date, default: Date.now },
   expiryDate: {
     type: Date,
@@ -34,53 +34,51 @@ var jobSchema = new mongoose.Schema({
   }, // never use Date.now() as this set a value when schema is created instead of when doc is
   views: { type: Number, default: 0 },
   status: { type: String, default: "Active", enum: ["Expired", "Active"] },
-  applyLink: {
+  companyApplyLink: {
     type: String,
     required: [
       function () {
-        return this.applymethod === "applyLink" && this.applyLink === "";
+        return this.applymethod === "indirect" && this.companyApplyLink === "";
       },
       "Må fylle ut lenken",
     ],
     trim: true,
   },
-  applyEmail: {
+  newAppNotifEmail: {
     type: String,
     required: [
       function () {
-        return this.applymethod === "onsiteapply" && this.applyEmail === "";
+        return this.applymethod === "direct" && this.newAppNotifEmail === "";
       },
       "e-post for mottak av varsler må fylles ut",
     ],
     trim: true,
   },
   applyDeadline: String,
+
   applicants: { type: Number, default: 0 },
-  poster: {
-    name: String,
-    position: String,
-    id: mongoose.Schema.Types.ObjectId,
+  postedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
   },
-  hasComPage: String,
+
   // if the user has no company page and fill in company data in the ad, store them here
-  company: {
-    comDescr: String,
-    comWebsite: String,
-    comName: {
-      type: String,
-      required: [
-        function () {
-          return this.hasComPage === "No";
-        },
-        "Arbeidsgiver må fylle ut",
-      ],
-      trim: true,
-    },
-    comlogo: String,
+
+  comDescr: String,
+  comWebsite: String,
+  comName: {
+    type: String,
+    required: [
+      function () {
+        return !this.company && this.comName === "";
+      },
+      "arbeidsgiver må fylles ut",
+    ],
+    trim: true,
   },
-  // if the user wants company data taken from his company page to be displayed on job details page
-  // store that company id here
-  companypage: { type: mongoose.Schema.Types.ObjectId, ref: "Company" },
+  comlogo: String,
+  // if job associated ith a reistered company store company id here
+  company: { type: mongoose.Schema.Types.ObjectId, ref: "Company" },
 });
 
 jobSchema.virtual("expired").get(function () {
