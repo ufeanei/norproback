@@ -69,6 +69,7 @@ const userSchema = new mongoose.Schema({
 
   experiences: [expSchema],
   educations: [eduSchema],
+  companyFollowed: [{ type: mongoose.Schema.Types.ObjectId, ref: "Company" }],
 });
 
 userSchema.virtual("firstName").get(function () {

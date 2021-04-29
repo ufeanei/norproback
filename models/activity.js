@@ -1,4 +1,4 @@
-var mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 // on NorgePro, activities are only generated when a user posts, comments a posts, like, loves or share a post
 //activities are not generated if someone liked a comment or reply a comment. we intend to give just a simple recency based newsfeed with no ranking

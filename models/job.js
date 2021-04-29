@@ -56,7 +56,7 @@ var jobSchema = new mongoose.Schema({
   },
   applyDeadline: String,
 
-  applicants: { type: Number, default: 0 },
+  applicants: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   postedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",

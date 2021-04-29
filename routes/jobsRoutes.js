@@ -29,7 +29,7 @@ router.post("/", urlencodedParser, checkauth, async (req, res) => {
 });
 
 //edit a job
-router.post("/jobs/:id", urlencodedParser, checkauth, async (req, res) => {
+router.post("/:id", urlencodedParser, checkauth, async (req, res) => {
   const id = req.params.id;
   // add more to job before saving
   try {
@@ -45,12 +45,15 @@ router.post("/jobs/:id", urlencodedParser, checkauth, async (req, res) => {
 });
 
 //view  a job given its id
-router.get("/jobs/:id", async (req, res) => {
+router.get("/:id", async (req, res) => {
   const id = req.params.id;
   // add more to job before saving
   try {
-    const job = await Job.findById(id);
-    if (resp) {
+    const job = await Job.findById(id)
+      .populate("company", "sector size logo name descr followers")
+      .lean();
+
+    if (job) {
       res.json({ job });
     } else {
       res.json({ message: "not found" });
@@ -61,7 +64,7 @@ router.get("/jobs/:id", async (req, res) => {
 });
 
 //delete  a job given its id
-router.get("/jobs/:id/delete", checkauth, async (req, res) => {
+router.get("/:id/delete", checkauth, async (req, res) => {
   const id = req.params.id;
   uId = req.userId;
   // add more to job before saving
@@ -82,7 +85,7 @@ router.get("/jobs/:id/delete", checkauth, async (req, res) => {
 
 router.get("/", async (req, res) => {
   try {
-    const jobs = await Job.find({}, "title fylke kommune comName comLogo")
+    const jobs = await Job.find({}, "title fylke kommune comName comlogo")
       .populate("company")
       .lean();
     console.log(jobs);

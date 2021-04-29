@@ -1,4 +1,4 @@
-var mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 var postSchema = new mongoose.Schema({
   posttext: { type: String, trim: true },
@@ -13,6 +13,9 @@ var postSchema = new mongoose.Schema({
     jobtitle: String,
     latestcompany: String,
   },
+
+  perAuthor: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+  comAuthor: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   comments: { type: Number, default: 0 },
   plikes: { type: Number, default: 0 },
   plikedBy: [mongoose.Schema.Types.ObjectId],

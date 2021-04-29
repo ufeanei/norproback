@@ -12,7 +12,7 @@ router.get("/currentUser", checkauth, async (req, res) => {
     const loggedUser = await User.findById(
       userId,
       "-password -emailConfirmed -confirmDigest"
-    ).populate("pageadminof", "_id, name");
+    ).populate("pageadminof", "_id name");
 
     if (loggedUser) {
       res.status(200).json({ currentUser: loggedUser });

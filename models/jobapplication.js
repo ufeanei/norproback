@@ -1,4 +1,4 @@
-var mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 jobapplicationSchema = new mongoose.Schema({
   coverletter: String,
@@ -7,14 +7,7 @@ jobapplicationSchema = new mongoose.Schema({
   jobtitle: String,
   jobid: mongoose.Schema.Types.ObjectId,
   createdAt: { type: Date, default: Date.now() },
-  applicant: {
-    id: mongoose.Schema.Types.ObjectId,
-    picture: String,
-    name: String,
-    latestjob: String,
-    highestdiplome: String,
-    location: String, // combine kommune and city here
-  },
+  applicant: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
 });
 
 var Jobapplication = mongoose.model("Jobapplication", jobapplicationSchema);
