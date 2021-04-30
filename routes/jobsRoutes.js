@@ -14,10 +14,7 @@ router.post("/", urlencodedParser, checkauth, async (req, res) => {
 
   try {
     const savedJob = await newJob.save();
-
-    console.log(savedJob);
     if (savedJob) {
-      console.log("im here");
       res.json({ message: "job saved" });
     } else {
       res.json({ message: "server error" });
@@ -29,17 +26,21 @@ router.post("/", urlencodedParser, checkauth, async (req, res) => {
 });
 
 //edit a job
-router.post("/:id", urlencodedParser, checkauth, async (req, res) => {
+router.post("/:id/edit", urlencodedParser, checkauth, async (req, res) => {
   const id = req.params.id;
-  // add more to job before saving
+  // remove the applicants property before saving elsean error is triggered
+  const job = req.body;
+  delete job.applicants;
   try {
-    const resp = await Job.updateOne({ _id, id }, { $set: req.body });
+    const resp = await Job.updateOne({ _id: id }, { $set: job });
     if (resp) {
       res.json({ message: "job updated" });
     } else {
+      console.log("hmmm");
       res.json({ message: "server error" });
     }
   } catch (err) {
+    console.log(err);
     res.json({ message: "server error" });
   }
 });
@@ -88,7 +89,6 @@ router.get("/", async (req, res) => {
     const jobs = await Job.find({}, "title fylke kommune comName comlogo")
       .populate("company")
       .lean();
-    console.log(jobs);
     if (jobs) {
       res.json({ jobs });
     } else {
