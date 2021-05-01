@@ -25,7 +25,7 @@ var companySchema = new mongoose.Schema({
   followers: { type: Number, default: 0 },
   datePosted: { type: Date, default: Date.now },
 
-  pageadminids: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+  pageAdminIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
 });
 
 var Company = mongoose.model("Company", companySchema);

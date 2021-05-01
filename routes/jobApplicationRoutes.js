@@ -7,37 +7,79 @@ import checkauth from "../middlewares/checkauth.js";
 const urlencodedParser = express.urlencoded({ extended: false });
 const router = express.Router();
 
-// get applications for a job. make sure only the jobowner can do this
-router.get("/:jobId", checkauth, async (req, res) => {
+// get applications for a job. make sure only the job poster can do this
+//by including his id as part of search predicate
+router.get("/privatejob/:jobId", checkauth, async (req, res) => {
   const jobId = req.params.jobId;
+  const userId = req.userId;
   try {
-    const applications = await JobApplication.find({ jobId: jobid })
+    const applications = await JobApplication.find({
+      jobId: jobId,
+      jobPostedBy: userId,
+    })
       .populate(
         "applicant",
         "profilPic totalExp  highestDiploma name latestJob fylke kommune"
       )
       .lean();
+
     res.json({ applications });
   } catch (err) {
     res.json({ message: "server error" });
   }
 });
 
-// save new application
-router.post("/", urlencodedParser, checkauth, async (re, res) => {
-  const appli = req.body;
-  appli.applicant = req.userId;
-  appli.status = "Under Review";
+// get applications for a job linked to a company. only company admins can do this
+router.get("/company/:jobId", checkauth, async (req, res) => {
+  const jobId = req.params.jobId;
+  const userId = req.userId;
 
   try {
-    const appOb = new JobApplication(appli);
-    if (appOb) {
-      res.json({ message: "new jobapp saved" });
-    } else {
-      res.json({ message: "sever error" });
+    const applications = await JobApplication.find({
+      jobId: jobId,
+    })
+      .populate(
+        "applicant",
+        "profilPic totalExp  highestDiploma name latestJob fylke kommune"
+      )
+      .populate("jobCom", "pageAdminIds")
+      .lean();
+    if (applications) {
+      if (userId in applications[0].jobCom.pageAdminIds) {
+        res.json({ applications });
+      } else {
+        res.json({ message: "server error" });
+      }
     }
   } catch (err) {
-    res.json({ message: "sever error" });
+    res.json({ message: "server error" });
+  }
+});
+
+// save new application
+router.post("/", urlencodedParser, checkauth, async (req, res) => {
+  const appli = req.body;
+  const jobId = req.body.jobid;
+
+  // check whether the user has not previously applied to this job
+  try {
+    const app = await JobApplication.findOne({
+      jobid: jobId,
+      applicant: req.userId,
+    });
+    if (app) {
+      res.json({ message: "Already applied" });
+    } else {
+      const appOb = new JobApplication(appli);
+      const savedApp = await appOb.save();
+      if (savedApp) {
+        res.json({ message: "new jobapp saved" });
+      } else {
+        res.json({ message: "server error" });
+      }
+    }
+  } catch (err) {
+    res.json({ message: "server error" });
   }
 });
 
@@ -52,6 +94,24 @@ router.post("/:id/status", urlencodedParser, checkauth, async (re, res) => {
     );
     if (appOb) {
       res.json({ message: status });
+    } else {
+      res.json({ message: "sever error" });
+    }
+  } catch (err) {
+    res.json({ message: "sever error" });
+  }
+});
+
+// delete application. this can only be done by applicants
+router.delete("/:id", checkauth, async (re, res) => {
+  const appId = req.params.id;
+  try {
+    const resp = JobApplication.deleteOne({
+      _id: appId,
+      applicant: req.userId,
+    });
+    if (resp) {
+      res.json({ message: "application deleted" });
     } else {
       res.json({ message: "sever error" });
     }

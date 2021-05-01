@@ -64,26 +64,24 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-//delete  a job given its id
-router.get("/:id/delete", checkauth, async (req, res) => {
-  const id = req.params.id;
+//delete  a job given its id done only by poster or company admin
+router.delete("/:id/delete", checkauth, async (req, res) => {
+  const jobId = req.params.id;
   uId = req.userId;
-  // add more to job before saving
+
   try {
-    const job = await Job.findOneAndUpdate(
-      { _id: id, postedBy: uId },
-      { $set: req.body }
-    );
+    const resp = await Job.deleteOne({ _id: jobId, postedBy: uId });
     if (resp) {
-      res.json({ job });
+      res.json({ message: "deleted job" });
     } else {
-      res.json({ message: "not found" });
+      res.json({ message: "server error" });
     }
   } catch (err) {
     res.json({ message: "server error" });
   }
 });
 
+// get all jobs for index page
 router.get("/", async (req, res) => {
   try {
     const jobs = await Job.find({}, "title fylke kommune comName comlogo")
@@ -94,6 +92,22 @@ router.get("/", async (req, res) => {
     } else {
       res.json({ message: "no jobs" });
     }
+  } catch (err) {
+    res.json({ message: "server error" });
+  }
+});
+
+// user saves a job for future consideration
+router.get("/:id/save", checkauth, async (req, res) => {
+  const jobId = re.params.id;
+  const userId = req.userId;
+  try {
+    const resp = await User.updateOne(
+      { _id: userId },
+      { $push: { savedjobs: jobId } }
+    );
+
+    res.json({ message: "job saved" });
   } catch (err) {
     res.json({ message: "server error" });
   }

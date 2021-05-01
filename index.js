@@ -1,5 +1,4 @@
 import express from "express";
-import bodyParser from "body-parser";
 import mongoose from "mongoose";
 import cookieParser from "cookie-parser";
 import siteConfigs from "./config/env.js";
@@ -7,6 +6,7 @@ import sessionRoutes from "./routes/sessionRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import companiesRoutes from "./routes/companiesRoutes.js";
 import jobsRoutes from "./routes/jobsRoutes.js";
+import jobApplicationRoutes from "./routes/jobApplicationRoutes.js";
 
 import cors from "cors";
 const app = express();
@@ -30,10 +30,11 @@ mongoose
 app.enable("trust proxy");
 app.use(cors({ origin: "http://localhost:3000", credentials: true }));
 //app.options("*", cors({ origin: "http://localhost:3000" }));
-app.use(bodyParser.json({ limit: "10mb", extended: true }));
+app.use(express.json({ limit: "10mb", extended: true }));
 app.use(cookieParser()); // parsing incoming cookies
 
 app.use("/session", sessionRoutes);
 app.use("/users", userRoutes);
 app.use("/companies", companiesRoutes);
 app.use("/jobs", jobsRoutes);
+app.use("/applications", jobApplicationRoutes);
