@@ -4,7 +4,6 @@ const env = process.env.NODE_ENV || "development";
 const checkauth = (req, res, next) => {
   try {
     const token = req.cookies ? req.cookies.tk : null;
-
     let decodedData;
     if (token) {
       decodedData = jwt.verify(token, configs[env].tksecret);
