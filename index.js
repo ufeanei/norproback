@@ -6,6 +6,7 @@ import sessionRoutes from "./routes/sessionRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import companiesRoutes from "./routes/companiesRoutes.js";
 import jobsRoutes from "./routes/jobsRoutes.js";
+import postsRoutes from "./routes/postsRoutes.js";
 import jobApplicationRoutes from "./routes/jobApplicationRoutes.js";
 
 import cors from "cors";
@@ -38,3 +39,4 @@ app.use("/users", userRoutes);
 app.use("/companies", companiesRoutes);
 app.use("/jobs", jobsRoutes);
 app.use("/applications", jobApplicationRoutes);
+app.use("/posts", postsRoutes);
