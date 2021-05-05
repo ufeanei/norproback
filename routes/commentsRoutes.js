@@ -6,19 +6,17 @@ const router = express.Router();
 import Comment from "../models/comment.js";
 import Post from "../models/post.js";
 
-router.get("/", checkauth, async (req, res) => {
+router.get("/:postId", checkauth, async (req, res) => {
   const perPage = 4;
   const page = req.query.page || 1;
-  const postid = req.params.pid; // add index for postId
+  const pId = req.params.postId; // add index for postId
   try {
-    const comments = await Comment.find({ postId: postid })
-      .sort({ datePosted: -1 })
+    const comments = await Comment.find({ postId: pId })
+      .sort({ datePosted: 1 })
       .skip(perPage * page - perPage)
       .limit(perPage)
       .exec();
-    const counts = await Comment.find({ postId: postid })
-      .countDocuments()
-      .exec();
+    const counts = await Comment.find({ postId: pId }).countDocuments().exec();
     const pages = Math.ceil(counts / perPage);
     res.json({
       comments: comments,
@@ -33,20 +31,23 @@ router.get("/", checkauth, async (req, res) => {
 });
 
 router.post("/", urlencodedParser, checkauth, async (req, res) => {
+  const postId = req.body.postId;
   const comment = new Comment(req.body);
   try {
     const savedCom = await comment.save();
     if (savedCom) {
-      const post = await Post.findOneAndUpdate(
-        { _id: pid },
-        { $inc: { comments: 1 } },
-        { new: true }
+      const result = await Post.updateOne(
+        { _id: postId },
+        { $inc: { comments: 1 } }
       );
-      res.json({ message: "message saved" });
+      res.json({
+        savedComment: { _id: comment._id, datePosted: comment.datePosted },
+      });
     } else {
       res.json({ message: "server error" });
     }
   } catch (err) {
+    console.log(err);
     res.json({ message: "server error" });
   }
 });

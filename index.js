@@ -8,6 +8,7 @@ import companiesRoutes from "./routes/companiesRoutes.js";
 import jobsRoutes from "./routes/jobsRoutes.js";
 import postsRoutes from "./routes/postsRoutes.js";
 import jobApplicationRoutes from "./routes/jobApplicationRoutes.js";
+import commentRoutes from "./routes/commentsRoutes.js";
 
 import cors from "cors";
 const app = express();
@@ -40,3 +41,4 @@ app.use("/companies", companiesRoutes);
 app.use("/jobs", jobsRoutes);
 app.use("/applications", jobApplicationRoutes);
 app.use("/posts", postsRoutes);
+app.use("/comments", commentRoutes);

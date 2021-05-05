@@ -1,15 +1,10 @@
-var mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 var commentSchema = new mongoose.Schema({
   postId: mongoose.Schema.Types.ObjectId,
-  //parentId: mongoose.Schema.Types.ObjectId,
   datePosted: { type: Date, default: Date.now },
-  author: {
-    name: String,
-    picture: String,
-    id: mongoose.Schema.Types.ObjectId,
-    work: String,
-  },
+  author: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+  comAuthor: { type: mongoose.Schema.Types.ObjectId, ref: "Company" },
   commentText: String,
   //clikes: Number,
   //clikedBy: [mongoose.Schema.Types.ObjectId]

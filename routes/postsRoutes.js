@@ -108,7 +108,7 @@ router.get("/:id/like", urlencodedParser, checkauth, async (req, res) => {
         "activity.verb": "liked",
         "activity.obj": post._id,
       });*/
-      console.log(foundPost.plikes);
+
       if (foundPost) {
         res.json({ likes: foundPost.plikes });
       } else {
@@ -126,9 +126,7 @@ router.get("/:id/like", urlencodedParser, checkauth, async (req, res) => {
       activity.verb = "liked";
       activity.obj = post._id;
       const act = await activity.save();
-*/ console.log(
-        foundPost.plikes
-      );
+*/
       res.json({ likes: foundPost.plikes });
     }
   } catch (err) {
