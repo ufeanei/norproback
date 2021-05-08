@@ -45,6 +45,22 @@ router.post("/:id/edit", urlencodedParser, checkauth, async (req, res) => {
   }
 });
 
+// get jobs for the company with id provided
+router.get("/companies/:comid", async (req, res) => {
+  const companyId = req.params.comid;
+  console.log("im here");
+  try {
+    const jobs = await Job.find({ company: companyId }).populate(
+      "company",
+      "name logo"
+    );
+    console.log(jobs);
+    res.json({ jobs });
+  } catch (err) {
+    res.json({ message: "server error" });
+  }
+});
+
 //view  a job given its id
 router.get("/:id", async (req, res) => {
   const id = req.params.id;
@@ -99,7 +115,7 @@ router.get("/", async (req, res) => {
 
 // user saves a job for future consideration
 router.get("/:id/save", checkauth, async (req, res) => {
-  const jobId = re.params.id;
+  const jobId = req.params.id;
   const userId = req.userId;
   try {
     const resp = await User.updateOne(
@@ -112,5 +128,7 @@ router.get("/:id/save", checkauth, async (req, res) => {
     res.json({ message: "server error" });
   }
 });
+
+// get find jobs for company given company id
 
 export default router;
