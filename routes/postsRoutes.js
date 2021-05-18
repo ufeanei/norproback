@@ -8,6 +8,30 @@ import Post from "../models/post.js";
 import Activity from "../models/activity.js";
 import checkauth from "../middlewares/checkauth.js";
 
+router.get("/users/:id", checkauth, async (req, res) => {
+  try {
+    const userPosts = await Post.find({ perAuthor: userId });
+
+    res.json({ userPosts });
+  } catch (err) {
+    res.json({ message: "sever error" });
+  }
+});
+router.post("/home/following", checkauth, async (req, res) => {
+  const uId = req.userId;
+  const followingArr = req.body.followingArr;
+
+  try {
+    const posts = await Post.find({});
+    if (savedPost) {
+      res.json({ message: "post created" });
+    } else {
+      res.json({ message: "sever error" });
+    }
+  } catch (err) {
+    res.json({ message: "sever error" });
+  }
+});
 // create a new post
 router.post("/", urlencodedParser, checkauth, async (req, res) => {
   const uId = req.userId;

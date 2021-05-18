@@ -61,6 +61,23 @@ router.get("/companies/:comid", async (req, res) => {
   }
 });
 
+router.get("/:discipline/home", checkauth, async (req, res) => {
+  const discipline = req.params.discipline;
+  try {
+    const jobs = await Job.find({}, "title fylke kommune comName comlogo")
+      .populate("company", "name logo")
+      .limit(5)
+      .lean();
+
+    if (jobs) {
+      res.json({ jobs });
+    } else {
+      res.json({ message: "not found" });
+    }
+  } catch (err) {
+    res.json({ message: "server error" });
+  }
+});
 //view  a job given its id
 router.get("/:id", async (req, res) => {
   const id = req.params.id;
