@@ -8,7 +8,29 @@ import Post from "../models/post.js";
 import Activity from "../models/activity.js";
 import checkauth from "../middlewares/checkauth.js";
 
+router.get("/users/:id/following", checkauth, async (req, res) => {
+  const uId = req.userId;
+  console.log("i am user following");
+  try {
+    const user = await User.findById(
+      req.userId,
+      "companyFollowed contacts"
+    ).lean();
+    const mergedArr = [...user.contacts, ...user.companyFollowed];
+    const posts = await Post.find({
+      $or: [
+        { perAuthor: { $in: mergedArr } },
+        { comAuthor: { $in: mergedArr } },
+      ],
+    });
+
+    res.json({ posts });
+  } catch (err) {
+    res.json({ message: "sever error" });
+  }
+});
 router.get("/users/:id", checkauth, async (req, res) => {
+  console.log("i am users posts");
   try {
     const userPosts = await Post.find({ perAuthor: userId });
 
@@ -17,21 +39,7 @@ router.get("/users/:id", checkauth, async (req, res) => {
     res.json({ message: "sever error" });
   }
 });
-router.post("/home/following", checkauth, async (req, res) => {
-  const uId = req.userId;
-  const followingArr = req.body.followingArr;
 
-  try {
-    const posts = await Post.find({});
-    if (savedPost) {
-      res.json({ message: "post created" });
-    } else {
-      res.json({ message: "sever error" });
-    }
-  } catch (err) {
-    res.json({ message: "sever error" });
-  }
-});
 // create a new post
 router.post("/", urlencodedParser, checkauth, async (req, res) => {
   const uId = req.userId;
