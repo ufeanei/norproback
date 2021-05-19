@@ -6,12 +6,14 @@ const router = express.Router();
 import Comment from "../models/comment.js";
 import Post from "../models/post.js";
 
+// get oaginated comments for a post
 router.get("/:postId", checkauth, async (req, res) => {
   const perPage = 4;
   const page = req.query.page || 1;
   const pId = req.params.postId; // add index for postId
   try {
     const comments = await Comment.find({ postId: pId })
+      .populate("author", "fullName latestJob latestCompany profilePic")
       .sort({ datePosted: 1 })
       .skip(perPage * page - perPage)
       .limit(perPage)

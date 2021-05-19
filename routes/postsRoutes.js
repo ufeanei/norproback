@@ -8,9 +8,10 @@ import Post from "../models/post.js";
 import Activity from "../models/activity.js";
 import checkauth from "../middlewares/checkauth.js";
 
+// get all posts by your contacts and companies you follow
 router.get("/users/:id/following", checkauth, async (req, res) => {
   const uId = req.userId;
-  console.log("i am user following");
+
   try {
     const user = await User.findById(
       req.userId,
@@ -29,12 +30,15 @@ router.get("/users/:id/following", checkauth, async (req, res) => {
     res.json({ message: "sever error" });
   }
 });
+
+// get all posts you have made
 router.get("/users/:id", checkauth, async (req, res) => {
   console.log("i am users posts");
   try {
-    const userPosts = await Post.find({ perAuthor: userId });
-
-    res.json({ userPosts });
+    const myposts = await Post.find({ perAuthor: req.userId })
+      .populate("perAuthor", "fullName profilePic latestJob latestCompany ")
+      .lean();
+    res.json({ myposts });
   } catch (err) {
     res.json({ message: "sever error" });
   }
@@ -85,7 +89,7 @@ router.post("/:id/edit", urlencodedParser, checkauth, async (req, res) => {
   const post = req.body;
   try {
     const foundPost = await Post.findOneAndUpdate(
-      { _id: postId, author: cUserId },
+      { _id: postId, perAuthor: cUserId },
       { $set: post }
     );
 
