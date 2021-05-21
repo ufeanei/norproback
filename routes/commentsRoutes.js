@@ -54,6 +54,23 @@ router.post("/", urlencodedParser, checkauth, async (req, res) => {
   }
 });
 
+// update comment. we make sure only the author can do that by including his id in the uery predicate
+router.post("/:id/edit", urlencodedParser, checkauth, async (req, res) => {
+  const commentId = req.params.id;
+  const uId = req.userId;
+  const comment = req.body;
+  console.log("editing comment");
+  try {
+    const resp = await Comment.updateOne(
+      { _id: commentId, author: uId },
+      { $set: comment }
+    );
+    res.json({ message: "comment edited" });
+  } catch (err) {
+    res.json({ message: "server error" });
+  }
+});
+
 router.delete("/:id/delete", checkauth, async (req, res) => {
   let commentid = req.params.cid;
   try {
