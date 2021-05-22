@@ -6,7 +6,7 @@ const router = express.Router();
 import Comment from "../models/comment.js";
 import Post from "../models/post.js";
 
-// get oaginated comments for a post
+// get paginated comments for a post
 router.get("/:postId", checkauth, async (req, res) => {
   const perPage = 4;
   const page = req.query.page || 1;
@@ -49,7 +49,6 @@ router.post("/", urlencodedParser, checkauth, async (req, res) => {
       res.json({ message: "server error" });
     }
   } catch (err) {
-    console.log(err);
     res.json({ message: "server error" });
   }
 });
@@ -59,7 +58,7 @@ router.post("/:id/edit", urlencodedParser, checkauth, async (req, res) => {
   const commentId = req.params.id;
   const uId = req.userId;
   const comment = req.body;
-  console.log("editing comment");
+
   try {
     const resp = await Comment.updateOne(
       { _id: commentId, author: uId },

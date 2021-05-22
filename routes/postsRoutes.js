@@ -87,7 +87,7 @@ router.post("/:id/edit", urlencodedParser, checkauth, async (req, res) => {
   const postId = req.params.id;
   const cUserId = req.userId;
   const post = req.body;
-  console.log("editing post");
+
   try {
     const foundPost = await Post.findOneAndUpdate(
       { _id: postId },
@@ -95,7 +95,6 @@ router.post("/:id/edit", urlencodedParser, checkauth, async (req, res) => {
     );
 
     if (foundPost) {
-      console.log("edited");
       res.json({ message: "post edited" });
     } else {
       res.json({ message: "sever error" });

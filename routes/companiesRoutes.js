@@ -10,9 +10,9 @@ const router = express.Router();
 //guard against mongodb injection. clean every input for mongo injection and xss
 router.post("/", urlencodedParser, checkauth, async (req, res) => {
   var company = new Company(req.body);
-  console.log(company);
+
   company.pageadminids.push(req.userId);
-  console.log(company);
+
   try {
     const com = await company.save();
 
@@ -45,7 +45,7 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// get a company by id
+// get a list of companies
 router.get("/", async (req, res) => {
   const id = req.params.id;
   try {
