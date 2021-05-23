@@ -121,11 +121,37 @@ router.get("/:id", async (req, res) => {
 
 // get all users from id meet the predicate condition
 router.get("/", async (req, res) => {
+  var perPage = 9;
+  var page = req.query.page || 1;
   try {
-    const users = await User.find({});
+    const users = await User.find({})
+      .skip(perPage * page - perPage)
+      .limit(perPage)
+      .lean();
     res.json({ users });
   } catch (err) {
     res.json({ message: "server error" });
+  }
+});
+
+// get users contacts. should normally be a get but we used post to send contacts list in body
+router.post("/:id/contacts", urlencodedParser, checkauth, async (req, res) => {
+  const userId = req.userId;
+  const contacts = req.body.contacts;
+  var perPage = 9;
+  var page = req.query.page || 1;
+  try {
+    const contacts = await User.find(
+      { _id: { $in: contacts } },
+      "fullName latestJob profilePic"
+    )
+      .skip(perPage * page - perPage)
+      .limit(perPage)
+      .lean();
+
+    res.json({ contacts });
+  } catch (err) {
+    res.status(201).json({ message: "server error" });
   }
 });
 
@@ -149,10 +175,10 @@ router.post("/saveexp", urlencodedParser, checkauth, async (req, res) => {
     if (resp) {
       res.json({ message: "saved" });
     } else {
-      res.json({ message: "serverfeil. prøv senere" });
+      res.json({ message: "server error" });
     }
   } catch (err) {
-    res.status(201).json({ message: "serverfeil. prøv senere" });
+    res.status(201).json({ message: "sever error" });
   }
 });
 
@@ -160,7 +186,7 @@ router.post("/saveexp", urlencodedParser, checkauth, async (req, res) => {
 router.post("/saveedu", urlencodedParser, checkauth, async (req, res) => {
   const id = req.userId;
   const edu = req.body;
-  console.log(edu);
+
   try {
     let resp;
     if (!edu._id) {
@@ -177,10 +203,10 @@ router.post("/saveedu", urlencodedParser, checkauth, async (req, res) => {
     if (resp) {
       res.json({ message: "saved" });
     } else {
-      res.json({ message: "serverfeil. prøv senere" });
+      res.json({ message: "server error" });
     }
   } catch (err) {
-    res.status(201).json({ message: "serverfeil. prøv senere" });
+    res.status(201).json({ message: "server error" });
   }
 });
 

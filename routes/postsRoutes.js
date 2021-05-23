@@ -11,7 +11,6 @@ import checkauth from "../middlewares/checkauth.js";
 // get all posts by your contacts and companies you follow
 router.get("/users/:id/following", checkauth, async (req, res) => {
   const uId = req.userId;
-
   try {
     const user = await User.findById(
       req.userId,
@@ -33,7 +32,6 @@ router.get("/users/:id/following", checkauth, async (req, res) => {
 
 // get all posts you have made
 router.get("/users/:id", checkauth, async (req, res) => {
-  console.log("i am users posts");
   try {
     const myposts = await Post.find({ perAuthor: req.userId })
       .populate("perAuthor", "fullName profilePic latestJob latestCompany ")
@@ -83,6 +81,7 @@ router.get("/company/:id", checkauth, async (req, res) => {
   }
 });
 
+// edit post
 router.post("/:id/edit", urlencodedParser, checkauth, async (req, res) => {
   const postId = req.params.id;
   const cUserId = req.userId;
@@ -105,7 +104,7 @@ router.post("/:id/edit", urlencodedParser, checkauth, async (req, res) => {
 });
 
 // delete a post by author
-router.delete("/:id/delete", urlencodedParser, checkauth, async (req, res) => {
+router.delete("/:id", urlencodedParser, checkauth, async (req, res) => {
   const postId = req.params.id;
   try {
     const resp = await Post.deleteOne({ _id: postId, author: req.userId });

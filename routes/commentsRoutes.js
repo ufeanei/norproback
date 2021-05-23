@@ -70,7 +70,7 @@ router.post("/:id/edit", urlencodedParser, checkauth, async (req, res) => {
   }
 });
 
-router.delete("/:id/delete", checkauth, async (req, res) => {
+router.delete("/:id", checkauth, async (req, res) => {
   let commentid = req.params.cid;
   try {
     const deletedCom = await Comment.findOneAndDelete({ _id: commentid });
