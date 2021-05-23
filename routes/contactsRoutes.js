@@ -1,7 +1,6 @@
 import express from "express";
 import User from "../models/user.js";
 import checkauth from "../middlewares/checkauth.js";
-import bcrypt from "bcrypt";
 
 const urlencodedParser = express.urlencoded({ extended: false });
 const router = express.Router();
@@ -93,14 +92,47 @@ router.get("/:id", checkauth, async (req, res) => {
   res.json({ message: "request denied" });
 });
 
+// cancel a previous contact request. just remove your id from toID's conRequest arr
+router.get("/:id", checkauth, async (req, res) => {
+  const toId = req.params.id;
+
+  const resp = await User.updateOne(
+    { _id: toId },
+    { $pull: { conRequests: req.userId } }
+  );
+  res.json({ message: "request cancelled" });
+});
+
 // remove contact
 router.get("/", checkauth, async (req, res) => {
   // remove his id from current user connections array
-  let toBeRemoveId = req.params.id,
-    currentId = req.userId;
-  User.updateMany(
-    { _id: { $in: [currentid, toBeRemoveId] } },
-    { $pull: { connections: { $in: [toBeRemoveId, currentid] } } }
+  const toBeRemoveId = req.params.id;
+  const cuId = req.userId;
+  const resp = await User.updateMany(
+    { _id: { $in: [cuId, toBeRemoveId] } },
+    { $pull: { connections: { $in: [toBeRemoveId, cuId] } } }
   );
-  res.json({ message: "sucess" });
+  res.json({ message: "contact removed" });
 });
+
+// block a user
+router.get("/", checkauth, async (req, res) => {
+  const idtoblock = req.params.idtoblock;
+  const resp = await User.updateOne(
+    { _id: req.userId },
+    { $push: { blockedusers: idtoblock } }
+  );
+  res.json({ message: "blocked" });
+});
+
+// unblock a user
+router.get("/", checkauth, async (req, res) => {
+  const blockedId = req.params.blockedid;
+  const resp = await User.updateOne(
+    { _id: req.userId },
+    { $pull: { blockedusers: blockedId } }
+  );
+  res.json({ message: "unblocked" });
+});
+
+export default router;
