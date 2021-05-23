@@ -1,6 +1,6 @@
-var mongoose = require("mongoose");
+import mongoose from "mongoose";
 
-var notificationSchema = new mongoose.Schema({
+const notificationSchema = new mongoose.Schema({
   receiverIds: [mongoose.Schema.Types.ObjectId],
   createdAt: { type: Date, default: Date.now },
   isRead: { type: Boolean, default: false },
@@ -12,5 +12,5 @@ var notificationSchema = new mongoose.Schema({
   },
 });
 
-var Notification = mongoose.model("Notification", notificationSchema);
+const Notification = mongoose.model("Notification", notificationSchema);
 export default Notification;

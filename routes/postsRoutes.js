@@ -9,7 +9,7 @@ import Activity from "../models/activity.js";
 import checkauth from "../middlewares/checkauth.js";
 import Comment from "../models/comment.js";
 
-// get all posts by your contacts and companies you follow
+//get all posts by your contacts and companies you follow
 router.get("/users/:id/following", checkauth, async (req, res) => {
   const uId = req.userId;
   try {

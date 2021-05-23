@@ -1,6 +1,4 @@
 import express from "express";
-import User from "../models/user.js";
-import Job from "../models/job.js";
 import JobApplication from "../models/jobapplication.js";
 import checkauth from "../middlewares/checkauth.js";
 
@@ -95,10 +93,10 @@ router.post("/:id/status", urlencodedParser, checkauth, async (re, res) => {
     if (appOb) {
       res.json({ message: status });
     } else {
-      res.json({ message: "sever error" });
+      res.json({ message: "server error" });
     }
   } catch (err) {
-    res.json({ message: "sever error" });
+    res.json({ message: "server error" });
   }
 });
 
@@ -113,10 +111,10 @@ router.delete("/:id", checkauth, async (re, res) => {
     if (resp) {
       res.json({ message: "application deleted" });
     } else {
-      res.json({ message: "sever error" });
+      res.json({ message: "server error" });
     }
   } catch (err) {
-    res.json({ message: "sever error" });
+    res.json({ message: "server error" });
   }
 });
 
