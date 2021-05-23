@@ -7,6 +7,7 @@ const router = express.Router();
 import Post from "../models/post.js";
 import Activity from "../models/activity.js";
 import checkauth from "../middlewares/checkauth.js";
+import Comment from "../models/comment.js";
 
 // get all posts by your contacts and companies you follow
 router.get("/users/:id/following", checkauth, async (req, res) => {
@@ -23,7 +24,6 @@ router.get("/users/:id/following", checkauth, async (req, res) => {
         { comAuthor: { $in: mergedArr } },
       ],
     });
-
     res.json({ posts });
   } catch (err) {
     res.json({ message: "sever error" });
@@ -116,6 +116,9 @@ router.delete("/:id", urlencodedParser, checkauth, async (req, res) => {
         "activity.verb": "posted",
         "activity.obj": post._id,
       });*/
+
+      // delete all comments to the post also
+      const resp = await Comment.deleteMany({ _id: postId });
       res.json({ message: "post deleted" });
     } else {
       res.json({ message: "sever error" });
