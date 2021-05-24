@@ -10,9 +10,10 @@ const router = express.Router();
 router.get("/privatejob/:jobId", checkauth, async (req, res) => {
   const jobId = req.params.jobId;
   const userId = req.userId;
+
   try {
     const applications = await JobApplication.find({
-      jobId: jobId,
+      job: jobId,
       jobPostedBy: userId,
     })
       .populate(
@@ -34,7 +35,7 @@ router.get("/company/:jobId", checkauth, async (req, res) => {
 
   try {
     const applications = await JobApplication.find({
-      jobId: jobId,
+      job: jobId,
     })
       .populate(
         "applicant",
@@ -57,12 +58,12 @@ router.get("/company/:jobId", checkauth, async (req, res) => {
 // save new application
 router.post("/", urlencodedParser, checkauth, async (req, res) => {
   const appli = req.body;
-  const jobId = req.body.jobid;
+  const jobId = req.body.job;
 
   // check whether the user has not previously applied to this job
   try {
     const app = await JobApplication.findOne({
-      jobid: jobId,
+      job: jobId,
       applicant: req.userId,
     });
     if (app) {
@@ -100,7 +101,7 @@ router.post("/:id/status", urlencodedParser, checkauth, async (re, res) => {
   }
 });
 
-// delete application. this can only be done by applicants
+// delete application. This can only be done by applicants
 router.delete("/:id", checkauth, async (re, res) => {
   const appId = req.params.id;
   try {
@@ -118,4 +119,30 @@ router.delete("/:id", checkauth, async (re, res) => {
   }
 });
 
+// get all applications by a user. paginated query
+router.get("/users/:id", checkauth, async (req, res) => {
+  const perPage = 5;
+  const page = req.query.page || 1;
+
+  try {
+    const applications = await JobApplication.find(
+      {
+        applicant: req.userId,
+      },
+      "-cv"
+    )
+      .populate("job", "title status")
+      .sort({ datePosted: 1 })
+      .skip(perPage * page - perPage)
+      .limit(perPage)
+      .exec();
+    const total = await JobApplication.find({
+      applicant: req.userId,
+    }).countDocuments();
+    console.log(applications.length);
+    res.json({ applications, total });
+  } catch (err) {
+    res.json({ message: "server error" });
+  }
+});
 export default router;

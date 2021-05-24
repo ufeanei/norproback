@@ -2,7 +2,7 @@ import express from "express";
 import User from "../models/user.js";
 import checkauth from "../middlewares/checkauth.js";
 import bcrypt from "bcrypt";
-import bodyParser from "body-parser";
+
 const urlencodedParser = express.urlencoded({ extended: false });
 const router = express.Router();
 
