@@ -162,6 +162,7 @@ router.get("/users/:id", checkauth, async (req, res) => {
       .sort({ datePosted: 1 })
       .skip(perPage * page - perPage)
       .limit(perPage)
+      .lean()
       .exec();
     const total = await Job.find({
       postedBy: req.userId,
@@ -194,6 +195,7 @@ router.post(
         .sort({ datePosted: 1 })
         .skip(perPage * page - perPage)
         .limit(perPage)
+        .lean()
         .exec();
       const total = await Job.find({
         _id: { $in: savedjobs },
