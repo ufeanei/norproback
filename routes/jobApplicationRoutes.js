@@ -71,11 +71,10 @@ router.post("/", urlencodedParser, checkauth, async (req, res) => {
     } else {
       const appOb = new JobApplication(appli);
       const savedApp = await appOb.save();
-      if (savedApp) {
-        res.json({ message: "new jobapp saved" });
-      } else {
-        res.json({ message: "server error" });
-      }
+      // we don't wait for job update to finish. that can happen in the background
+      const resp = Job.updateOne({ _id: jobId }, { $inc: { applicants: 1 } });
+
+      res.json({ message: "new jobapp saved" });
     }
   } catch (err) {
     res.json({ message: "server error" });
@@ -109,11 +108,8 @@ router.delete("/:id", checkauth, async (re, res) => {
       _id: appId,
       applicant: req.userId,
     });
-    if (resp) {
-      res.json({ message: "application deleted" });
-    } else {
-      res.json({ message: "server error" });
-    }
+
+    res.json({ message: "application deleted" });
   } catch (err) {
     res.json({ message: "server error" });
   }

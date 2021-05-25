@@ -150,7 +150,7 @@ router.get("/:id/save", checkauth, async (req, res) => {
 router.get("/users/:id", checkauth, async (req, res) => {
   const perPage = 5;
   const page = req.query.page || 1;
-  console.log(page);
+
   try {
     const jobs = await Job.find(
       {
@@ -158,7 +158,7 @@ router.get("/users/:id", checkauth, async (req, res) => {
       },
       "title datePosted status views applicants"
     )
-      .populate("job", "title status")
+
       .sort({ datePosted: 1 })
       .skip(perPage * page - perPage)
       .limit(perPage)
@@ -173,4 +173,36 @@ router.get("/users/:id", checkauth, async (req, res) => {
   }
 });
 
+// get all jobs saved by a user. paginated query
+router.post(
+  "/saved/users/:id",
+  urlencodedParser,
+  checkauth,
+  async (req, res) => {
+    const savedjobs = req.body.savedjobsarr;
+    const perPage = 5;
+    const page = req.query.page || 1;
+
+    try {
+      const jobs = await Job.find(
+        {
+          _id: { $in: savedjobs },
+        },
+        "title status "
+      )
+
+        .sort({ datePosted: 1 })
+        .skip(perPage * page - perPage)
+        .limit(perPage)
+        .exec();
+      const total = await Job.find({
+        _id: { $in: savedjobs },
+      }).countDocuments();
+
+      res.json({ jobs, total });
+    } catch (err) {
+      res.json({ message: "server error" });
+    }
+  }
+);
 export default router;
