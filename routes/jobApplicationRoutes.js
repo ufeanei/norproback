@@ -121,10 +121,11 @@ router.delete("/:id", checkauth, async (re, res) => {
 
 // get all applications by a user. paginated query
 router.get("/users/:id", checkauth, async (req, res) => {
-  const perPage = 5;
+  const perPage = 3;
   const page = req.query.page || 1;
 
   try {
+    console.log(req.query.page);
     const applications = await JobApplication.find(
       {
         applicant: req.userId,
@@ -132,14 +133,14 @@ router.get("/users/:id", checkauth, async (req, res) => {
       "-cv"
     )
       .populate("job", "title status")
-      .sort({ datePosted: 1 })
+      .sort({ createdAt: 1 })
       .skip(perPage * page - perPage)
       .limit(perPage)
       .exec();
     const total = await JobApplication.find({
       applicant: req.userId,
     }).countDocuments();
-    console.log(applications.length);
+
     res.json({ applications, total });
   } catch (err) {
     res.json({ message: "server error" });

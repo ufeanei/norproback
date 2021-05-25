@@ -146,6 +146,31 @@ router.get("/:id/save", checkauth, async (req, res) => {
   }
 });
 
-// get find jobs for company given company id
+// get all jobsby a user. paginated query
+router.get("/users/:id", checkauth, async (req, res) => {
+  const perPage = 5;
+  const page = req.query.page || 1;
+  console.log(page);
+  try {
+    const jobs = await Job.find(
+      {
+        postedBy: req.userId,
+      },
+      "title datePosted status views applicants"
+    )
+      .populate("job", "title status")
+      .sort({ datePosted: 1 })
+      .skip(perPage * page - perPage)
+      .limit(perPage)
+      .exec();
+    const total = await Job.find({
+      postedBy: req.userId,
+    }).countDocuments();
+
+    res.json({ jobs, total });
+  } catch (err) {
+    res.json({ message: "server error" });
+  }
+});
 
 export default router;
