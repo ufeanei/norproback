@@ -135,14 +135,22 @@ router.get("/", async (req, res) => {
 });
 
 // get users contacts. should normally be a get but we used post to send contacts list in body
+
 router.post("/:id/contacts", urlencodedParser, checkauth, async (req, res) => {
   const userId = req.userId;
-  const contacts = req.body.contacts;
+  let contactsArr;
   var perPage = 9;
   var page = req.query.page || 1;
   try {
+    if (!Object.keys(req.body).length) {
+      // user reloads page. no contacts arr from frontend so we get it from DB
+      const user = await User.findById(req.userId, "connections").lean();
+      contactsArr = user.connections;
+    } else {
+      contactsArr = req.body; // normal case when no refresh of requesting page
+    }
     const contacts = await User.find(
-      { _id: { $in: contacts } },
+      { _id: { $in: contactsArr } },
       "fullName latestJob profilePic"
     )
       .skip(perPage * page - perPage)

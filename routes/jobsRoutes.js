@@ -20,7 +20,6 @@ router.post("/", urlencodedParser, checkauth, async (req, res) => {
       res.json({ message: "server error" });
     }
   } catch (err) {
-    console.log(err.errors);
     res.json({ message: "server error" });
   }
 });
@@ -36,11 +35,9 @@ router.post("/:id/edit", urlencodedParser, checkauth, async (req, res) => {
     if (resp) {
       res.json({ message: "job updated" });
     } else {
-      console.log("hmmm");
       res.json({ message: "server error" });
     }
   } catch (err) {
-    console.log(err);
     res.json({ message: "server error" });
   }
 });
@@ -48,7 +45,7 @@ router.post("/:id/edit", urlencodedParser, checkauth, async (req, res) => {
 // get jobs for the company with id provided
 router.get("/companies/:comid", async (req, res) => {
   const companyId = req.params.comid;
-  console.log("im here");
+
   try {
     const jobs = await Job.find({ company: companyId }).populate(
       "company",
@@ -131,13 +128,14 @@ router.get("/", async (req, res) => {
 });
 
 // user saves a job for future consideration
-router.get("/:id/save", checkauth, async (req, res) => {
+router.get("/save/:id", checkauth, async (req, res) => {
   const jobId = req.params.id;
   const userId = req.userId;
+
   try {
     const resp = await User.updateOne(
       { _id: userId },
-      { $push: { savedjobs: jobId } }
+      { $addToSet: { savedjobs: jobId } }
     );
 
     res.json({ message: "job saved" });
@@ -180,14 +178,23 @@ router.post(
   urlencodedParser,
   checkauth,
   async (req, res) => {
-    const savedjobs = req.body.savedjobsarr;
+    let savedJobs;
     const perPage = 5;
     const page = req.query.page || 1;
 
+    // there is an edge case if user reloads the page making this request. this make savedjobs from auth user null
+    //we must therefore find the auth user and extracts his savedjobs array and use in our request
     try {
+      if (!Object.keys(req.body).length) {
+        // user reloads page
+        const user = await User.findById(req.userId, "savedjobs").lean();
+        savedJobs = user.savedjobs;
+      } else {
+        savedJobs = req.body; // normal case when no refresh of requesting page
+      }
       const jobs = await Job.find(
         {
-          _id: { $in: savedjobs },
+          _id: { $in: savedJobs },
         },
         "title status "
       )
@@ -198,7 +205,7 @@ router.post(
         .lean()
         .exec();
       const total = await Job.find({
-        _id: { $in: savedjobs },
+        _id: { $in: savedJobs },
       }).countDocuments();
 
       res.json({ jobs, total });
