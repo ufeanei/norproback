@@ -70,7 +70,7 @@ var jobSchema = new mongoose.Schema({
     type: String,
     required: [
       function () {
-        return !this.company && this.comName === "";
+        return this.comName === "" && !this.company;
       },
       "arbeidsgiver må fylles ut",
     ],

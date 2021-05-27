@@ -156,7 +156,6 @@ router.post("/:id/contacts", urlencodedParser, checkauth, async (req, res) => {
       .skip(perPage * page - perPage)
       .limit(perPage)
       .lean();
-
     res.json({ contacts });
   } catch (err) {
     res.status(201).json({ message: "server error" });

@@ -51,7 +51,7 @@ router.get("/companies/:comid", async (req, res) => {
       "company",
       "name logo"
     );
-    console.log(jobs);
+
     res.json({ jobs });
   } catch (err) {
     res.json({ message: "server error" });
