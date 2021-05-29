@@ -10,21 +10,17 @@ const router = express.Router();
 //guard against mongodb injection. clean every input for mongo injection and xss
 router.post("/", urlencodedParser, checkauth, async (req, res) => {
   var company = new Company(req.body);
-
+  console.log("back");
   company.pageadminids.push(req.userId);
 
   try {
     const com = await company.save();
 
-    if (com) {
-      const resp = await User.updateOne(
-        { _id: req.userId },
-        { $push: { pageadminof: com._id } }
-      );
-      res.json({ message: "company created" });
-    } else {
-      res.json({ message: "server error" });
-    }
+    const resp = await User.updateOne(
+      { _id: req.userId },
+      { $push: { pageadminof: com._id } }
+    );
+    res.json({ message: "company created" });
   } catch (err) {
     res.json({ message: "server error" });
   }
@@ -35,11 +31,8 @@ router.get("/:id", async (req, res) => {
   const id = req.params.id;
   try {
     const company = await Company.findById(id);
-    if (company) {
-      res.json({ company });
-    } else {
-      res.json({ message: "not found" });
-    }
+
+    res.json({ company });
   } catch (err) {
     res.json({ message: "server error" });
   }
@@ -65,11 +58,7 @@ router.get("/:id", checkauth, async (req, res) => {
   const id = req.params.id;
   try {
     const company = await Company.findById(id);
-    if (company) {
-      res.json({ company });
-    } else {
-      res.json({ message: "not found" });
-    }
+    res.json({ company });
   } catch (err) {
     res.json({ message: "server error" });
   }
@@ -79,16 +68,10 @@ router.get("/:id", checkauth, async (req, res) => {
 router.post("/:id/edit", urlencodedParser, checkauth, async (req, res) => {
   const id = req.params.id;
   const r = req.body;
+
   try {
-    const company = await Company.findOneAndUpdate(
-      { _id: id },
-      { $set: req.body }
-    );
-    if (company) {
-      res.json({ message: "company saved" });
-    } else {
-      res.json({ message: "server error" });
-    }
+    const resp = await Company.updateOne({ _id: id }, { $set: req.body });
+    res.json({ message: "company saved" });
   } catch (err) {
     res.json({ message: "server error" });
   }
@@ -98,12 +81,9 @@ router.post("/:id/edit", urlencodedParser, checkauth, async (req, res) => {
 router.delete("/:id", checkauth, async (req, res) => {
   const id = req.params.id;
   try {
-    const company = await Company.deleteOne({ _id: id });
-    if (company) {
-      res.json({ message: "company deleted" });
-    } else {
-      res.json({ message: "server error" });
-    }
+    const resp = await Company.deleteOne({ _id: id });
+
+    res.json({ message: "company deleted" });
   } catch (err) {
     res.json({ message: "server error" });
   }
