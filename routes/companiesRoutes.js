@@ -82,8 +82,55 @@ router.delete("/:id", checkauth, async (req, res) => {
   const id = req.params.id;
   try {
     const resp = await Company.deleteOne({ _id: id });
-
     res.json({ message: "company deleted" });
+  } catch (err) {
+    res.json({ message: "server error" });
+  }
+});
+
+// current user follows a company
+router.get("/follow/:id", checkauth, async (req, res) => {
+  const comId = req.params.id;
+  const uId = req.userId;
+  try {
+    const resp = await User.updateOne(
+      { _id: uId },
+      { $addToSet: { companyFollowed: comId } }
+    );
+    if (resp.nModified) {
+      const resp2 = await Company.updateOne(
+        { _id: comId },
+        { $inc: { followers: 1 } }
+      );
+
+      res.json({ message: "following" });
+    } else {
+      res.json({ message: "server error" });
+    }
+  } catch (err) {
+    res.json({ message: "server error" });
+  }
+});
+
+router.get("/unfollow/:id", checkauth, async (req, res) => {
+  const comId = req.params.id;
+  const uId = req.userId;
+
+  try {
+    const resp = await User.updateOne(
+      { _id: uId },
+      { $pull: { companyFollowed: comId } }
+    );
+    if (resp.nModified) {
+      const resp2 = await Company.updateOne(
+        { _id: comId },
+        { $inc: { followers: -1 } }
+      );
+
+      res.json({ message: "unfollowed" });
+    } else {
+      res.json({ message: "server error" });
+    }
   } catch (err) {
     res.json({ message: "server error" });
   }
