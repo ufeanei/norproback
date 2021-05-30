@@ -1,7 +1,7 @@
 import express from "express";
 import JobApplication from "../models/jobapplication.js";
 import checkauth from "../middlewares/checkauth.js";
-
+import Job from "../models/job.js";
 const urlencodedParser = express.urlencoded({ extended: false });
 const router = express.Router();
 
@@ -72,11 +72,14 @@ router.post("/", urlencodedParser, checkauth, async (req, res) => {
       const appOb = new JobApplication(appli);
       const savedApp = await appOb.save();
       // we don't wait for job update to finish. that can happen in the background
-      const resp = Job.updateOne({ _id: jobId }, { $inc: { applicants: 1 } });
-
+      const resp = await Job.updateOne(
+        { _id: jobId },
+        { $inc: { applicants: 1 } }
+      );
       res.json({ message: "new jobapp saved" });
     }
   } catch (err) {
+    console.log(err);
     res.json({ message: "server error" });
   }
 });
@@ -101,13 +104,21 @@ router.post("/:id/status", urlencodedParser, checkauth, async (re, res) => {
 });
 
 // delete application. This can only be done by applicants
-router.delete("/:id", checkauth, async (re, res) => {
+router.delete("/:id", checkauth, async (req, res) => {
+  // need to pass in too the id of the job
+
+  const jobId = req.query.jobId;
   const appId = req.params.id;
   try {
     const resp = JobApplication.deleteOne({
       _id: appId,
       applicant: req.userId,
     });
+
+    const resp2 = await Job.updateOne(
+      { _id: jobId },
+      { $inc: { applicants: -1 } }
+    );
 
     res.json({ message: "application deleted" });
   } catch (err) {
@@ -121,7 +132,6 @@ router.get("/users/:id", checkauth, async (req, res) => {
   const page = req.query.page || 1;
 
   try {
-    console.log(req.query.page);
     const applications = await JobApplication.find(
       {
         applicant: req.userId,

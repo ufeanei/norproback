@@ -45,7 +45,7 @@ router.post("/:id/edit", urlencodedParser, checkauth, async (req, res) => {
 // get jobs for the company with id provided
 router.get("/companies/:comid", async (req, res) => {
   const companyId = req.params.comid;
-
+  console.log(" not real");
   try {
     const jobs = await Job.find({ company: companyId }).populate(
       "company",
@@ -53,6 +53,36 @@ router.get("/companies/:comid", async (req, res) => {
     );
 
     res.json({ jobs });
+  } catch (err) {
+    res.json({ message: "server error" });
+  }
+});
+
+// get jobs for the company with id provided
+router.get("/admin/companies/:comid", async (req, res) => {
+  const companyId = req.params.comid;
+  console.log("real");
+  const perPage = 5;
+  const page = req.query.page || 1;
+
+  try {
+    const jobs = await Job.find(
+      {
+        company: companyId,
+      },
+      "title datePosted status views applicants"
+    )
+
+      .sort({ datePosted: 1 })
+      .skip(perPage * page - perPage)
+      .limit(perPage)
+      .lean()
+      .exec();
+    const total = await Job.find({
+      postedBy: req.userId,
+    }).countDocuments();
+
+    res.json({ jobs, total });
   } catch (err) {
     res.json({ message: "server error" });
   }
@@ -77,18 +107,17 @@ router.get("/:discipline/home", checkauth, async (req, res) => {
 });
 //view  a job given its id
 router.get("/:id", async (req, res) => {
-  const id = req.params.id;
-  // add more to job before saving
+  const jobid = req.params.id;
   try {
-    const job = await Job.findById(id)
+    const job = await Job.findOneAndUpdate(
+      { _id: jobid },
+      { $inc: { views: 1 } },
+      { useFindAndModify: false, new: true }
+    )
       .populate("company", "sector size logo name descr followers")
       .lean();
 
-    if (job) {
-      res.json({ job });
-    } else {
-      res.json({ message: "not found" });
-    }
+    res.json({ job });
   } catch (err) {
     res.json({ message: "server error" });
   }
@@ -97,8 +126,8 @@ router.get("/:id", async (req, res) => {
 //delete  a job given its id done only by poster or company admin
 router.delete("/:id/delete", checkauth, async (req, res) => {
   const jobId = req.params.id;
-  uId = req.userId;
-
+  const uId = req.userId;
+  const admin = req.query.admin;
   try {
     const resp = await Job.deleteOne({ _id: jobId, postedBy: uId });
     if (resp) {
