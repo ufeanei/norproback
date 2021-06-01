@@ -10,8 +10,8 @@ const router = express.Router();
 //guard against mongodb injection. clean every input for mongo injection and xss
 router.post("/", urlencodedParser, checkauth, async (req, res) => {
   var company = new Company(req.body);
-  console.log("back");
-  company.pageadminids.push(req.userId);
+
+  company.pageAdminIds.push(req.userId);
 
   try {
     const com = await company.save();
@@ -136,4 +136,74 @@ router.get("/unfollow/:id", checkauth, async (req, res) => {
   }
 });
 
+router.get(
+  "/admin/:newadminemail/add/:companyid",
+  checkauth,
+  async (req, res) => {
+    try {
+      const { newadminemail, companyid } = req.params;
+      const user = await User.findOneAndUpdate(
+        { email: newadminemail },
+        { $addToSet: { pageadminof: companyid } },
+        {
+          useFindAndModify: false,
+          select: {
+            fullName: 1,
+            latestJob: 1,
+            latestCompany: 1,
+            profilePic: 1,
+          },
+        }
+      );
+
+      if (user) {
+        const resp = await Company.updateOne(
+          { _id: companyid },
+          { $addToSet: { pageAdminIds: user._id } }
+        );
+
+        res.json({ message: "added" });
+      } else {
+        res.json({ message: " no user" });
+      }
+    } catch (err) {
+      console.log(err);
+      res.json({ message: "server error" });
+    }
+  }
+);
+
+router.get(
+  "/admin/:newadminemail/add/:companyid",
+  checkauth,
+  async (req, res) => {
+    try {
+      const { userId, companyid } = req.params;
+      const user = await User.findOneAndUpdate(
+        { _id: userId },
+        { $pull: { pageadminof: companyid } },
+        {
+          useFindAndModify: false,
+          select: {
+            fullName: 1,
+          },
+        }
+      );
+
+      if (user) {
+        const resp = await Company.updateOne(
+          { _id: companyid },
+          { $pull: { pageAdminIds: userId } }
+        );
+
+        res.json({ message: "removed" });
+      } else {
+        res.json({ message: " no user" });
+      }
+    } catch (err) {
+      console.log(err);
+      res.json({ message: "server error" });
+    }
+  }
+);
 export default router;
