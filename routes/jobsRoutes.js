@@ -61,10 +61,10 @@ router.get("/companies/:comid", async (req, res) => {
 // get jobs for the company with id provided
 router.get("/admin/companies/:comid", async (req, res) => {
   const companyId = req.params.comid;
-  console.log("real");
-  const perPage = 5;
-  const page = req.query.page || 1;
 
+  const perPage = 2;
+  const page = req.query.page || 1;
+  console.log(page);
   try {
     const jobs = await Job.find(
       {

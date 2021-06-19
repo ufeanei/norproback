@@ -78,7 +78,7 @@ router.delete("/:id", checkauth, async (req, res) => {
       const updatePost = await Post.findOneAndUpdate(
         { _id: deletedCom.postId },
         { $inc: { comments: -1 } },
-        { new: true }
+        { new: true, useFindAndModify: false }
       );
 
       res.json({ message: "comment deleted" });

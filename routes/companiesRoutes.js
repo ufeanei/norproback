@@ -173,37 +173,45 @@ router.get(
   }
 );
 
-router.get(
-  "/admin/:newadminemail/add/:companyid",
-  checkauth,
-  async (req, res) => {
-    try {
-      const { userId, companyid } = req.params;
-      const user = await User.findOneAndUpdate(
-        { _id: userId },
-        { $pull: { pageadminof: companyid } },
-        {
-          useFindAndModify: false,
-          select: {
-            fullName: 1,
-          },
-        }
+router.get("/admin/:userid/remove/:companyid", checkauth, async (req, res) => {
+  try {
+    const { userid, companyid } = req.params;
+    const user = await User.findOneAndUpdate(
+      { _id: userid },
+      { $pull: { pageadminof: companyid } },
+      {
+        useFindAndModify: false,
+        select: {
+          fullName: 1,
+        },
+      }
+    );
+
+    if (user) {
+      const resp = await Company.updateOne(
+        { _id: companyid },
+        { $pull: { pageAdminIds: user._id } }
       );
 
-      if (user) {
-        const resp = await Company.updateOne(
-          { _id: companyid },
-          { $pull: { pageAdminIds: userId } }
-        );
-
-        res.json({ message: "removed" });
-      } else {
-        res.json({ message: " no user" });
-      }
-    } catch (err) {
-      console.log(err);
-      res.json({ message: "server error" });
+      res.json({ message: "removed" });
+    } else {
+      res.json({ message: " no user" });
     }
+  } catch (err) {
+    console.log(err);
+    res.json({ message: "server error" });
   }
-);
+});
+
+router.get("/getadmins/:companyid", checkauth, async (req, res) => {
+  try {
+    const com = await Company.findById(req.params.companyid)
+      .populate("pageAdminIds", "fullName latestJob latestCompany profilePic")
+      .lean();
+    const admins = com.pageAdminIds;
+    res.json({ admins });
+  } catch (err) {
+    res.json({ message: "server error" });
+  }
+});
 export default router;
