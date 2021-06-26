@@ -29,7 +29,7 @@ router.get("/privatejob/:jobId", checkauth, async (req, res) => {
 });
 
 // get applications for a job linked to a company. only company admins can do this
-router.get("/company/:jobId", checkauth, async (req, res) => {
+router.get("/comjob/:jobId", checkauth, async (req, res) => {
   const jobId = req.params.jobId;
   const userId = req.userId;
 
@@ -37,6 +37,7 @@ router.get("/company/:jobId", checkauth, async (req, res) => {
     const applications = await JobApplication.find({
       job: jobId,
     })
+      .populate("job", "title")
       .populate(
         "applicant",
         "profilPic totalExp  highestDiploma name latestJob fylke kommune"
@@ -45,7 +46,11 @@ router.get("/company/:jobId", checkauth, async (req, res) => {
       .lean();
     if (applications) {
       if (userId in applications[0].jobCom.pageAdminIds) {
-        res.json({ applications });
+        const fac = await JobApplication.aggregate([
+          { $match: { job: jobId } },
+          { $group: { _id: "$status", total: { $sum: 1 } } },
+        ]);
+        res.json({ applications, fac });
       } else {
         res.json({ message: "server error" });
       }
