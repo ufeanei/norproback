@@ -77,7 +77,7 @@ var jobSchema = new mongoose.Schema({
     trim: true,
   },
   comlogo: String,
-  // if job associated ith a reistered company store company id here
+  // if job associated ith a registered company store company id here
   company: { type: mongoose.Schema.Types.ObjectId, ref: "Company" },
 });
 

@@ -1,4 +1,5 @@
 import express from "express";
+import mongoose from "mongoose";
 import JobApplication from "../models/jobapplication.js";
 import checkauth from "../middlewares/checkauth.js";
 import Job from "../models/job.js";
@@ -32,30 +33,35 @@ router.get("/privatejob/:jobId", checkauth, async (req, res) => {
 router.get("/comjob/:jobId", checkauth, async (req, res) => {
   const jobId = req.params.jobId;
   const userId = req.userId;
-
+  console.log("im here now");
   try {
-    const applications = await JobApplication.find({
-      job: jobId,
-    })
+    const applications = await JobApplication.find(
+      {
+        job: jobId,
+      },
+      "-cv"
+    )
       .populate("job", "title")
       .populate(
         "applicant",
-        "profilPic totalExp  highestDiploma name latestJob fylke kommune"
+        "fullName profilePic totalExp  highestDiploma name latestJob fylke kommune"
       )
-      .populate("jobCom", "pageAdminIds")
-      .lean();
+      .populate("jobCom", "pageAdminIds");
+
     if (applications) {
-      if (userId in applications[0].jobCom.pageAdminIds) {
-        const fac = await JobApplication.aggregate([
-          { $match: { job: jobId } },
+      if (applications[0].jobCom.pageAdminIds.includes(userId)) {
+        const facets = await JobApplication.aggregate([
+          { $match: { job: mongoose.Types.ObjectId(jobId) } },
           { $group: { _id: "$status", total: { $sum: 1 } } },
         ]);
-        res.json({ applications, fac });
+
+        res.json({ applications, facets });
       } else {
         res.json({ message: "server error" });
       }
     }
   } catch (err) {
+    console.log(err);
     res.json({ message: "server error" });
   }
 });
