@@ -64,7 +64,7 @@ router.get("/admin/companies/:comid", async (req, res) => {
 
   const perPage = 2;
   const page = req.query.page || 1;
-  console.log(page);
+
   try {
     const jobs = await Job.find(
       {

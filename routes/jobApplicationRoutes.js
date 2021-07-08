@@ -33,31 +33,96 @@ router.get("/privatejob/:jobId", checkauth, async (req, res) => {
 router.get("/comjob/:jobId", checkauth, async (req, res) => {
   const jobId = req.params.jobId;
   const userId = req.userId;
-  console.log("im here now");
+  const perPage = 1;
+  const page = req.query.page || 1;
+
+  let status;
+
+  switch (req.query.status) {
+    case "all":
+      status = { $in: ["Under Review", "Shortlisted", "Invited"] };
+      break;
+    case "shortlisted":
+      status = "Shortlisted";
+      break;
+    case "invited":
+      status = "Invited";
+      break;
+    default:
+      status = { $in: ["Under Review", "Shortlisted", "Invited"] };
+  }
   try {
     const applications = await JobApplication.find(
       {
         job: jobId,
+        status: status,
       },
       "-cv"
     )
-      .populate("job", "title")
       .populate(
         "applicant",
         "fullName profilePic totalExp  highestDiploma name latestJob fylke kommune"
       )
-      .populate("jobCom", "pageAdminIds");
+      .populate("jobCom", "pageAdminIds")
+      .sort({ "applicant.totalExp": -1 })
+      .skip(perPage * page - perPage)
+      .limit(perPage)
+      .exec();
+    let facets;
+    if (req.query.pageload) {
+      // aggregate only when applicant manager page loads first time or is refreshed
+      // lookup stage is to get jobtitle when page loads or refreshes
+      facets = await JobApplication.aggregate([
+        { $match: { job: mongoose.Types.ObjectId(jobId) } }, // manual type casting in aggregation
+        {
+          $lookup: {
+            from: "jobs",
+            pipeline: [
+              { $match: { _id: mongoose.Types.ObjectId(jobId) } }, // manual type casting in aggregation
+              { $project: { title: 1 } },
+            ],
+            as: "job",
+          },
+        },
 
-    if (applications) {
-      if (applications[0].jobCom.pageAdminIds.includes(userId)) {
-        const facets = await JobApplication.aggregate([
-          { $match: { job: mongoose.Types.ObjectId(jobId) } },
-          { $group: { _id: "$status", total: { $sum: 1 } } },
-        ]);
+        {
+          $group: {
+            _id: "$status",
+            total: { $sum: 1 },
+            job: { $first: "$job" },
+          },
+        },
+      ]);
+    }
 
+    // make sure auth user is admin to company that posted the job
+    if (req.query.pageload) {
+      if (
+        applications.length &&
+        applications[0].jobCom.pageAdminIds.includes(userId)
+      ) {
         res.json({ applications, facets });
-      } else {
+      } else if (
+        applications.length &&
+        !applications[0].jobCom.pageAdminIds.includes(userId)
+      ) {
         res.json({ message: "server error" });
+      } else {
+        res.json({ applications, facets }); // send empty applications and facets
+      }
+    } else {
+      if (
+        applications.length &&
+        applications[0].jobCom.pageAdminIds.includes(userId)
+      ) {
+        res.json({ applications });
+      } else if (
+        applications.length &&
+        !applications[0].jobCom.pageAdminIds.includes(userId)
+      ) {
+        res.json({ message: "server error" });
+      } else {
+        res.json({ applications }); // send empty applications and facets
       }
     }
   } catch (err) {
@@ -82,7 +147,7 @@ router.post("/", urlencodedParser, checkauth, async (req, res) => {
     } else {
       const appOb = new JobApplication(appli);
       const savedApp = await appOb.save();
-      // we don't wait for job update to finish. that can happen in the background
+      // optionally you can remove await and let it run in the background
       const resp = await Job.updateOne(
         { _id: jobId },
         { $inc: { applicants: 1 } }
@@ -90,29 +155,35 @@ router.post("/", urlencodedParser, checkauth, async (req, res) => {
       res.json({ message: "new jobapp saved" });
     }
   } catch (err) {
-    console.log(err);
     res.json({ message: "server error" });
   }
 });
 
 // change status. only jobowner can do this
-router.post("/:id/status", urlencodedParser, checkauth, async (re, res) => {
-  const appId = req.body.id;
-  const status = req.body.status;
-  try {
-    const appOb = JobApplication.updateOne(
-      { _id: appId },
-      { $set: { status: status } }
-    );
-    if (appOb) {
-      res.json({ message: status });
-    } else {
+router.post(
+  "/:id/changestatus",
+  urlencodedParser,
+  checkauth,
+  async (req, res) => {
+    const appId = req.body.id;
+    const status = req.body.status;
+
+    try {
+      const appOb = await JobApplication.updateOne(
+        { _id: appId },
+        { $set: { status: status } }
+      );
+      console.log(appOb);
+      if (appOb) {
+        res.json({ message: status });
+      } else {
+        res.json({ message: "server error" });
+      }
+    } catch (err) {
       res.json({ message: "server error" });
     }
-  } catch (err) {
-    res.json({ message: "server error" });
   }
-});
+);
 
 // delete application. This can only be done by applicants
 router.delete("/:id", checkauth, async (req, res) => {
@@ -159,6 +230,18 @@ router.get("/users/:id", checkauth, async (req, res) => {
     }).countDocuments();
 
     res.json({ applications, total });
+  } catch (err) {
+    res.json({ message: "server error" });
+  }
+});
+
+router.get("/cv/:id", checkauth, async (req, res) => {
+  const applicantid = req.params.id;
+
+  try {
+    const application = await JobApplication.findById(applicantid, "cv");
+
+    res.json({ cv: application.cv });
   } catch (err) {
     res.json({ message: "server error" });
   }
