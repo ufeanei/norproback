@@ -8,17 +8,14 @@ const router = express.Router();
 
 router.get("/currentUser", checkauth, async (req, res) => {
   const userId = req.userId;
+
   try {
     const loggedUser = await User.findById(
       userId,
       "-password -emailConfirmed -confirmDigest"
     ).populate("pageadminof", "_id name");
 
-    if (loggedUser) {
-      res.status(200).json({ currentUser: loggedUser });
-    } else {
-      res.status(200).json({ message: "user not logged in" });
-    }
+    res.status(200).json({ currentUser: loggedUser });
   } catch (err) {
     res.status(302).redirect(configs[env].page500);
   }

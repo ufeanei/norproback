@@ -9,6 +9,7 @@ import jobsRoutes from "./routes/jobsRoutes.js";
 import postsRoutes from "./routes/postsRoutes.js";
 import jobApplicationRoutes from "./routes/jobApplicationRoutes.js";
 import commentRoutes from "./routes/commentsRoutes.js";
+import sendMessageRoutes from "./routes/sendMessageRoutes.js";
 
 import cors from "cors";
 const app = express();
@@ -31,7 +32,7 @@ mongoose
 //************general middlewares */
 app.enable("trust proxy");
 app.use(cors({ origin: "http://localhost:3000", credentials: true }));
-//app.options("*", cors({ origin: "http://localhost:3000" }));
+
 app.use(express.json({ limit: "10mb", extended: true }));
 app.use(cookieParser()); // parsing incoming cookies
 
@@ -42,3 +43,4 @@ app.use("/jobs", jobsRoutes);
 app.use("/applications", jobApplicationRoutes);
 app.use("/posts", postsRoutes);
 app.use("/comments", commentRoutes);
+app.use("/messages", sendMessageRoutes);

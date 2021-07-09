@@ -6,10 +6,8 @@ const notificationSchema = new mongoose.Schema({
   isRead: { type: Boolean, default: false },
   type: String,
   personalNote: String,
-  sender: {
-    name: String,
-    picture: String,
-  },
+  comSender: { type: mongoose.Schema.Types.ObjectId, ref: "Company" },
+  sender: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
 });
 
 const Notification = mongoose.model("Notification", notificationSchema);
