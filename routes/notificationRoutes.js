@@ -12,7 +12,6 @@ router.post("/", urlencodedParser, checkauth, async (req, res) => {
   const notif = req.body;
 
   const newNotif = new Notification(notif);
-  // add more to job before saving
 
   try {
     const savedNotif = await newNotif.save();
@@ -26,26 +25,30 @@ router.post("/", urlencodedParser, checkauth, async (req, res) => {
 // get all unread notification paginated query
 router.get("/", urlencodedParser, checkauth, async (req, res) => {
   const perPage = 10;
-  const page = req.query.page || 1;
+  const page = req.query.page;
+  const pageLoaded = req.query.pageLoaded;
 
   try {
-    const notifications = await Notification.find({
-      recipiants: req.userId,
-      isRead: false,
-    })
-      .populate("sender", "fullName profilePic")
-      .populate("comSender", "name logo")
-      .sort({ createdAt: 1 })
-      .skip(perPage * page - perPage)
-      .limit(perPage)
-      .exec();
+    if (page) {
+      const notifications = await Notification.find({
+        recipiants: req.userId,
+        isRead: false,
+      })
+
+        .populate("sender", "fullName profilePic")
+        .populate("comSender", "name logo")
+        .sort({ createdAt: 1 })
+        .skip(perPage * page - perPage)
+        .limit(perPage)
+        .exec();
+    }
     const total = await Notification.find({
       recipiants: req.userId,
       isRead: false,
     })
       .countDocuments()
       .exec();
-    res.json({ notifications, total });
+    page ? res.json({ notifications, total }) : res.json({ total });
   } catch (err) {
     res.json({ message: "server error" });
   }
@@ -56,7 +59,20 @@ router.get(
   "/changestatus/:id",
   urlencodedParser,
   checkauth,
-  async (req, res) => {}
+  async (req, res) => {
+    try {
+      const notif = await Notification.updateOne(
+        { _id: req.params.id },
+        {
+          isRead: true,
+        }
+      );
+
+      return res.json({ message: "success" });
+    } catch (err) {
+      return res.json({ message: "server error" });
+    }
+  }
 );
 
 // delete notification
@@ -64,7 +80,17 @@ router.delete(
   "/notification/:id",
   urlencodedParser,
   checkauth,
-  async (req, res) => {}
+  async (req, res) => {
+    try {
+      const notify = await Notification.deleteOne({
+        id: req.params.id,
+      });
+
+      return res.json({ message: "deleted" });
+    } catch (err) {
+      return res.json({ msg: "server error" });
+    }
+  }
 );
 
 export default router;

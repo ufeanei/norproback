@@ -81,7 +81,7 @@ router.post("/users/:id", urlencodedParser, checkauth, async (req, res) => {
   }
 });
 
-// reject a contact request. simply remove the reuestedid from current user conRequest arr
+// reject a contact request. simply remove the requesting id from current user conRequest arr
 router.get("/:id", checkauth, async (req, res) => {
   const requesterId = req.params.id;
 

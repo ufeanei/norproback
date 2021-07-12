@@ -30,7 +30,7 @@ router.get("/privatejob/:jobId", checkauth, async (req, res) => {
 });
 
 // get applications for a job linked to a company. only company admins can do this
-router.get("/comjob/:jobId", checkauth, async (req, res) => {
+router.get("/job/:jobId", checkauth, async (req, res) => {
   const jobId = req.params.jobId;
   const userId = req.userId;
   const perPage = 1;
@@ -126,7 +126,6 @@ router.get("/comjob/:jobId", checkauth, async (req, res) => {
       }
     }
   } catch (err) {
-    console.log(err);
     res.json({ message: "server error" });
   }
 });
@@ -173,7 +172,6 @@ router.post(
         { _id: appId },
         { $set: { status: status } }
       );
-      console.log(appOb);
       if (appOb) {
         res.json({ message: status });
       } else {

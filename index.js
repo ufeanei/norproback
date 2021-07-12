@@ -10,6 +10,7 @@ import postsRoutes from "./routes/postsRoutes.js";
 import jobApplicationRoutes from "./routes/jobApplicationRoutes.js";
 import commentRoutes from "./routes/commentsRoutes.js";
 import sendMessageRoutes from "./routes/sendMessageRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
 
 import cors from "cors";
 const app = express();
@@ -44,3 +45,4 @@ app.use("/applications", jobApplicationRoutes);
 app.use("/posts", postsRoutes);
 app.use("/comments", commentRoutes);
 app.use("/messages", sendMessageRoutes);
+app.use("/notifications", notificationRoutes);

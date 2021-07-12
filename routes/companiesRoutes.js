@@ -167,7 +167,6 @@ router.get(
         res.json({ message: " no user" });
       }
     } catch (err) {
-      console.log(err);
       res.json({ message: "server error" });
     }
   }

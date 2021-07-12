@@ -81,7 +81,7 @@ router.get("/admin/companies/:comid", async (req, res) => {
     const total = await Job.find({
       company: companyId,
     }).countDocuments();
-    console.log(total);
+
     res.json({ jobs, total });
   } catch (err) {
     res.json({ message: "server error" });
