@@ -45,7 +45,7 @@ router.post("/:id/edit", urlencodedParser, checkauth, async (req, res) => {
 // get jobs for the company with id provided
 router.get("/companies/:comid", async (req, res) => {
   const companyId = req.params.comid;
-  console.log(" not real");
+
   try {
     const jobs = await Job.find({ company: companyId }).populate(
       "company",
@@ -58,7 +58,7 @@ router.get("/companies/:comid", async (req, res) => {
   }
 });
 
-// get jobs for the company with id provided
+// get jobs for the company with id provided. request come from page admin
 router.get("/admin/companies/:comid", async (req, res) => {
   const companyId = req.params.comid;
 

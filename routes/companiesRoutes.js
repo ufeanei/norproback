@@ -93,16 +93,28 @@ router.get("/follow/:id", checkauth, async (req, res) => {
   const comId = req.params.id;
   const uId = req.userId;
   try {
-    const resp = await User.updateOne(
+    const authUser = await User.findOneAndUpdate(
       { _id: uId },
-      { $addToSet: { companyFollowed: comId } }
+      { $addToSet: { companyFollowed: comId } },
+      {
+        useFindAndModify: false,
+        select: {
+          fullName: 1,
+        },
+      }
     );
     if (resp.nModified) {
-      const resp2 = await Company.updateOne(
+      const company = await Company.findOneAndUpdate(
         { _id: comId },
         { $inc: { followers: 1 } }
       );
-
+      let notify = new Notification();
+      notify.receiverIds = company.pageAdminIds;
+      notify.type = "connection accepted";
+      notify.personalNote = `${authUser.fullName} has accepted your contact request`;
+      notify.sender = uId;
+      notify.url = `/users/${uId} `;
+      notify.save();
       res.json({ message: "following" });
     } else {
       res.json({ message: "server error" });
@@ -112,6 +124,7 @@ router.get("/follow/:id", checkauth, async (req, res) => {
   }
 });
 
+// unfollow a page or company
 router.get("/unfollow/:id", checkauth, async (req, res) => {
   const comId = req.params.id;
   const uId = req.userId;
@@ -136,6 +149,7 @@ router.get("/unfollow/:id", checkauth, async (req, res) => {
   }
 });
 
+// add a new admin
 router.get(
   "/admin/:newadminemail/add/:companyid",
   checkauth,
@@ -172,6 +186,7 @@ router.get(
   }
 );
 
+// remove as admin to a page
 router.get("/admin/:userid/remove/:companyid", checkauth, async (req, res) => {
   try {
     const { userid, companyid } = req.params;
@@ -202,6 +217,7 @@ router.get("/admin/:userid/remove/:companyid", checkauth, async (req, res) => {
   }
 });
 
+// get all admins to a page
 router.get("/getadmins/:companyid", checkauth, async (req, res) => {
   try {
     const com = await Company.findById(req.params.companyid)

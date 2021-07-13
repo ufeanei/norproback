@@ -5,6 +5,7 @@ const router = express.Router();
 
 import Comment from "../models/comment.js";
 import Post from "../models/post.js";
+import Notification from "../models/notification.js";
 
 // get paginated comments for a post
 router.get("/:postId", checkauth, async (req, res) => {
@@ -32,16 +33,27 @@ router.get("/:postId", checkauth, async (req, res) => {
   }
 });
 
+// save a new comment
+
 router.post("/", urlencodedParser, checkauth, async (req, res) => {
   const postId = req.body.postId;
   const comment = new Comment(req.body);
   try {
     const savedCom = await comment.save();
     if (savedCom) {
-      const result = await Post.updateOne(
+      const post = await Post.updateOne(
         { _id: postId },
         { $inc: { comments: 1 } }
       );
+
+      // notification sent to the requester telling him his request has been accepted
+      let notify = new Notification();
+      notify.receiverIds = [post.perAuthor];
+      notify.type = "new comment for post";
+      notify.personalNote = `Your post got a new comment`;
+      notify.sender = fromId;
+      notify.url = `/posts/${postId} `;
+      const re = await notify.save();
       res.json({
         savedComment: { _id: comment._id, datePosted: comment.datePosted },
       });

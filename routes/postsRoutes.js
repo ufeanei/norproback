@@ -6,6 +6,7 @@ const router = express.Router();
 
 import Post from "../models/post.js";
 import Activity from "../models/activity.js";
+import Notification from "../models/notification.js";
 import checkauth from "../middlewares/checkauth.js";
 import Comment from "../models/comment.js";
 
@@ -56,14 +57,6 @@ router.post("/", urlencodedParser, checkauth, async (req, res) => {
   } catch (err) {
     res.json({ message: "sever error" });
   }
-
-  /*
-  let activity = new Activity();
-  activity.actor = uId;
-  activity.verb = "posted";
-  activity.obj = savedpost._id;
-  const savedactivity = await activity.save();
-  */
 });
 
 //get all posts by company with id
@@ -90,7 +83,10 @@ router.post("/:id/edit", urlencodedParser, checkauth, async (req, res) => {
   try {
     const foundPost = await Post.findOneAndUpdate(
       { _id: postId },
-      { $set: post }
+      { $set: post },
+      {
+        useFindAndModify: false,
+      }
     );
 
     if (foundPost) {
@@ -109,14 +105,6 @@ router.delete("/:id", urlencodedParser, checkauth, async (req, res) => {
   try {
     const resp = await Post.deleteOne({ _id: postId, author: req.userId });
     if (resp) {
-      /*
-      //also delete the 'posted' activity related to this post
-      const deletedActvity = Activity.deleteOne({
-        "activity.actor.id": current._id,
-        "activity.verb": "posted",
-        "activity.obj": post._id,
-      });*/
-
       // delete all comments to the post also
       const resp = await Comment.deleteMany({ _id: postId });
       res.json({ message: "post deleted" });
@@ -139,37 +127,26 @@ router.get("/:id/like", urlencodedParser, checkauth, async (req, res) => {
       const foundPost = await Post.findOneAndUpdate(
         { _id: pid },
         { $pull: { plikedBy: uId }, $inc: { plikes: -1 } },
-        { new: true }
+        { useFindAndModify: false, new: true }
       );
-      /*
-      const resp = await Activity.deleteOne({
-        "activity.actor.id": uId,
-        "activity.verb": "liked",
-        "activity.obj": post._id,
-      });*/
 
-      if (foundPost) {
-        res.json({ likes: foundPost.plikes });
-      } else {
-      }
+      res.json({ likes: foundPost.plikes });
     } else {
       const foundPost = await Post.findOneAndUpdate(
         { _id: pid },
         { $push: { plikedBy: uId }, $inc: { plikes: 1 } },
-        { new: true }
+        { useFindAndModify: false, new: true }
       );
-      /*
-      let activity = new Activity();
-      activity.actor.id = uId;
-      activity.actor.name = actorName;
-      activity.verb = "liked";
-      activity.obj = post._id;
-      const act = await activity.save();
-*/
+      let notify = new Notification();
+      notify.receiverIds = [foundPost.perAuthor];
+      notify.type = "new like for post";
+      notify.personalNote = `Your post got a new like`;
+      notify.sender = uId;
+      notify.url = `/posts/${foundPost._id} `;
+      const re = await notify.save();
       res.json({ likes: foundPost.plikes });
     }
   } catch (err) {
-    console.log(err);
     res.json({ message: "server error" });
   }
 });

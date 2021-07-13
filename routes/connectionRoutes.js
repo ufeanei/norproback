@@ -1,6 +1,7 @@
 import express from "express";
 import User from "../models/user.js";
 import checkauth from "../middlewares/checkauth.js";
+import Notification from "../models/notification.js";
 
 const urlencodedParser = express.urlencoded({ extended: false });
 const router = express.Router();
@@ -21,8 +22,8 @@ router.get("new/:id", checkauth, async (req, res) => {
       { $push: { conRequestsSent: toId } }
     );
     // sent note to the one receiviong the request
-    let = notify = new Notification();
-    notify.receiverIds.push(toId);
+    let notify = new Notification();
+    notify.receiverIds = [toId];
     notify.type = "connection request";
     notify.personalNote = `You received a contact request from ${fromName}`;
     notify.sender = fromId;
@@ -38,7 +39,6 @@ router.get("new/:id", checkauth, async (req, res) => {
 router.get("/users/:id/accept", checkauth, async (req, res) => {
   const receiverId = req.userId; // current user is receiver
   const requesterId = req.params.id; // the one who sent the request
-  const fromName = req.query.fromName;
 
   try {
     const resp = await User.updateOne(
@@ -49,18 +49,24 @@ router.get("/users/:id/accept", checkauth, async (req, res) => {
       }
     );
 
-    const resp = await User.updateOne(
-      { _id: recerverId },
+    const authUser = await User.findOneAndUpdate(
+      { _id: receiverId },
       {
         $push: { connections: requesterId },
         $pull: { conRequests: requesterid },
+      },
+      {
+        useFindAndModify: false,
+        select: {
+          fullName: 1,
+        },
       }
     );
     // notification sent to the requester telling him his request has been accepted
-    let = notify = new Notification();
-    notify.receiverIds.push(requesterId);
+    let notify = new Notification();
+    notify.receiverIds = [requesterId];
     notify.type = "connection accepted";
-    notify.personalNote = `${fromName} has accepted your contact request`;
+    notify.personalNote = `${authUser.fullName} has accepted your contact request`;
     notify.sender = fromId;
     notify.url = `/users/${fromId} `;
     notify.save();

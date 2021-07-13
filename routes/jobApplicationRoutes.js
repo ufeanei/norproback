@@ -163,8 +163,8 @@ router.post("/", urlencodedParser, checkauth, async (req, res) => {
       // notification sent pageadmins or job poster if a free job
       let notify = new Notification();
       job.company
-        ? notify.receiverIds.concatjob.company.pageAdminIds
-        : notify.push(job.postedBy._id);
+        ? (notify.receiverIds = job.company.pageAdminIds)
+        : (notify.receiverIds = [job.postedBy._id]);
       job.company
         ? (notify.url = `/companies/${job.company._id}/pagedashboard?int=postedjobs&page=1`)
         : (notify.url = `/home/${job.postedBy._id}?int=jobsposted&page=1`);
