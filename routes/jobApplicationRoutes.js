@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import JobApplication from "../models/jobapplication.js";
 import checkauth from "../middlewares/checkauth.js";
 import Job from "../models/job.js";
+import Notification from "../models/notification.js";
 const urlencodedParser = express.urlencoded({ extended: false });
 const router = express.Router();
 
@@ -147,10 +148,31 @@ router.post("/", urlencodedParser, checkauth, async (req, res) => {
       const appOb = new JobApplication(appli);
       const savedApp = await appOb.save();
       // optionally you can remove await and let it run in the background
-      const resp = await Job.updateOne(
+      const job = await Job.findOneAndUpdate(
         { _id: jobId },
-        { $inc: { applicants: 1 } }
-      );
+        { $inc: { applicants: 1 } },
+        {
+          useFindAndModify: false,
+          select: {
+            title: 1,
+          },
+        }
+      )
+        .populate("company", "logo name  pageAdminIds")
+        .populate("postedBy", "fullName");
+      // notification sent pageadmins or job poster if a free job
+      let notify = new Notification();
+      job.company
+        ? notify.receiverIds.concatjob.company.pageAdminIds
+        : notify.push(job.postedBy._id);
+      job.company
+        ? (notify.url = `/companies/${job.company._id}/pagedashboard?int=postedjobs&page=1`)
+        : (notify.url = `/home/${job.postedBy._id}?int=jobsposted&page=1`);
+
+      notify.type = "connection accepted";
+      notify.personalNote = `Your job ${job.title} has a new applicant. Go to your home page to view applicants so far`;
+      notify.sender = req.userId;
+      notify.save();
       res.json({ message: "new jobapp saved" });
     }
   } catch (err) {

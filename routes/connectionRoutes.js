@@ -7,22 +7,27 @@ const router = express.Router();
 
 ////send connection request to another user
 router.get("new/:id", checkauth, async (req, res) => {
-  const fromId = req.userId;
+  const fromId = req.userId; // current user is sending the request
   const toId = req.params.id;
+  const fromName = req.query.fromName;
 
   try {
     const resp = await User.updateOne(
       { _id: toId },
       { $push: { conRequests: fromId } }
     );
+    const resp = await User.updateOne(
+      { _id: fromId },
+      { $push: { conRequestsSent: toId } }
+    );
+    // sent note to the one receiviong the request
     let = notify = new Notification();
     notify.receiverIds.push(toId);
     notify.type = "connection request";
-    notify.personalNote = message;
-    notify.sender.name = current.fullName;
-    notify.sender.picture = current.userimage;
+    notify.personalNote = `You received a contact request from ${fromName}`;
+    notify.sender = fromId;
+    notify.url = `/contacts/requests`;
     notify.save();
-
     res.json({ message: "connection request sent" });
   } catch (err) {
     res.json({ message: "server error" });
@@ -33,26 +38,31 @@ router.get("new/:id", checkauth, async (req, res) => {
 router.get("/users/:id/accept", checkauth, async (req, res) => {
   const receiverId = req.userId; // current user is receiver
   const requesterId = req.params.id; // the one who sent the request
+  const fromName = req.query.fromName;
 
   try {
     const resp = await User.updateOne(
-      { _id: requesterid },
-      { $push: { connections: currentid } }
+      { _id: requesterId },
+      {
+        $push: { connections: receiverId },
+        $pull: { conRequestsSent: receiverId },
+      }
     );
 
     const resp = await User.updateOne(
       { _id: recerverId },
       {
         $push: { connections: requesterId },
-        $pull: { conrequests: requesterid },
+        $pull: { conRequests: requesterid },
       }
     );
     // notification sent to the requester telling him his request has been accepted
     let = notify = new Notification();
-    notify.receiverIds.push(requesterid);
+    notify.receiverIds.push(requesterId);
     notify.type = "connection accepted";
-    notify.personalNote = "";
-    notify.sender = requesterId;
+    notify.personalNote = `${fromName} has accepted your contact request`;
+    notify.sender = fromId;
+    notify.url = `/users/${fromId} `;
     notify.save();
     res.json({ message: " contact added" });
   } catch (err) {
@@ -89,6 +99,11 @@ router.get("/:id", checkauth, async (req, res) => {
     { _id: req.userId },
     { $pull: { conRequests: requesterid } }
   );
+
+  const resp = await User.updateOne(
+    { _id: requesterId },
+    { $pull: { conRequestsSent: req.userId } }
+  );
   res.json({ message: "request denied" });
 });
 
@@ -100,6 +115,11 @@ router.get("/:id", checkauth, async (req, res) => {
     { _id: toId },
     { $pull: { conRequests: req.userId } }
   );
+  const resp = await User.updateOne(
+    { _id: req.userId },
+    { $pull: { conRequestsSent: req.userId } }
+  );
+
   res.json({ message: "request cancelled" });
 });
 

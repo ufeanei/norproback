@@ -53,7 +53,7 @@ const userSchema = new mongoose.Schema({
   industry: String,
   connections: [mongoose.Schema.Types.ObjectId],
   savedjobs: [mongoose.Schema.Types.ObjectId],
-  conRequests: [mongoose.Schema.Types.ObjectId],
+  conRequests: [mongoose.Schema.Types.ObjectId], // store here ids of users who sent con request to you
   blockedUsers: [mongoose.Schema.Types.ObjectId],
   city: String,
   owner: { type: Boolean, default: false },
@@ -64,7 +64,7 @@ const userSchema = new mongoose.Schema({
   rememberDigest: String,
   resetDigest: String,
   resetSentAt: Date,
-  contacts: [mongoose.Schema.Types.ObjectId],
+  conRequestsSent: [mongoose.Schema.Types.ObjectId], // store here id of people you sent request to
   pageadminof: [{ type: mongoose.Schema.Types.ObjectId, ref: "Company" }],
 
   experiences: [expSchema],
