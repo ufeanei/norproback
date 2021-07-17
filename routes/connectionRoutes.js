@@ -113,6 +113,46 @@ router.get("/:id", checkauth, async (req, res) => {
   res.json({ message: "request denied" });
 });
 
+// get all contact requests made to authuser
+router.get("/requests", checkauth, async (req, res) => {
+  const perPage = 2;
+  const page = req.query.page || 1;
+  try {
+    const contacts = await User.findById(req.userId, "conrequest")
+      .populate("conrequest", "fullname profilePic latestJob latestCompany")
+      .sort({ fullName: 1 })
+      .skip(perPage * page - perPage)
+      .limit(perPage)
+      .lean()
+      .exec();
+
+    res.json({ contacts });
+  } catch (err) {
+    res.json({ message: "server error" });
+  }
+});
+// get all contact requests sent by authuser
+router.get("/requestsent", checkauth, async (req, res) => {
+  const perPage = 2;
+  const page = req.query.page || 1;
+  try {
+    const reqSent = await User.findById(req.userId, "conRequestsSent")
+      .populate(
+        "conRequestsSent",
+        "fullname profilePic latestJob latestCompany"
+      )
+      .sort({ fullName: 1 })
+      .skip(perPage * page - perPage)
+      .limit(perPage)
+      .lean()
+      .exec();
+
+    res.json({ reqSent });
+  } catch (err) {
+    res.json({ message: "server error" });
+  }
+});
+
 // cancel a previous contact request. just remove your id from toID's conRequest arr
 router.get("/:id", checkauth, async (req, res) => {
   const toId = req.params.id;
