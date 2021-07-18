@@ -56,11 +56,7 @@ router.post(
         { $set: { profilePic: req.body.pic } }
       );
 
-      if (user) {
-        res.json({ message: "uploaded" });
-      } else {
-        res.json({ message: "serverfeil. prøv senere" });
-      }
+      res.json({ message: "uploaded" });
     } catch (err) {
       res.status(201).json({ message: "serverfeil. prøv senere" });
     }
@@ -92,7 +88,7 @@ router.get("/getcard", checkauth, async (req, res) => {
     const user = await User.findById(
       userId,
       "discipline latestJob latestCompany totalExp jobStatus fylke kommune diplomaField fullName highestDiploma"
-    );
+    ).lean();
     res.json({ user });
   } catch (err) {
     res.json({ message: "sever error" });
@@ -104,13 +100,22 @@ router.get("/:id", async (req, res) => {
   const id = req.params.id;
 
   try {
-    const user = await User.findById(id);
+    const user = await User.findById(
+      id,
+      "fullName discipline latestJob latestCompany totalExp highestDiploma diplomaField fylke kommune profilePic experiences educations"
+    ).lean();
 
-    if (user) {
-      res.status(200).json({ user });
-    } else {
-      res.json({ message: "user not found" });
-    }
+    const similar = await User.find(
+      {
+        $or: [{ discipline: user.discpline }, { fylke: user.fylke }],
+      },
+
+      "fullName latestJob latestCompany profilePic"
+    )
+      .limit(6)
+      .lean();
+
+    res.json({ user, similar });
   } catch (err) {
     res.json({ message: "server error" });
   }

@@ -7,29 +7,34 @@ const urlencodedParser = express.urlencoded({ extended: false });
 const router = express.Router();
 
 ////send connection request to another user
-router.get("new/:id", checkauth, async (req, res) => {
+router.get("/new/:id", checkauth, async (req, res) => {
   const fromId = req.userId; // current user is sending the request
   const toId = req.params.id;
   const fromName = req.query.fromName;
 
   try {
-    const resp = await User.updateOne(
-      { _id: toId },
-      { $push: { conRequests: fromId } }
-    );
-    const resp = await User.updateOne(
-      { _id: fromId },
-      { $push: { conRequestsSent: toId } }
-    );
-    // sent note to the one receiviong the request
-    let notify = new Notification();
-    notify.receiverIds = [toId];
-    notify.type = "connection request";
-    notify.personalNote = `You received a contact request from ${fromName}`;
-    notify.sender = fromId;
-    notify.url = `/contacts/requests`;
-    notify.save();
-    res.json({ message: "connection request sent" });
+    if (fromId === toId) {
+      // prevent authuser sending request to himself
+      res.json({ message: "server error" });
+    } else {
+      const resp = await User.updateOne(
+        { _id: toId },
+        { $push: { conRequests: fromId } }
+      );
+      const resp2 = await User.updateOne(
+        { _id: fromId },
+        { $push: { conRequestsSent: toId } }
+      );
+      // sent note to the one receiviong the request
+      let notify = new Notification();
+      notify.receiverIds = [toId];
+      notify.type = "connection request";
+      notify.personalNote = `You received a contact request from ${fromName}`;
+      notify.sender = fromId;
+      notify.url = `/contacts/requests`;
+      notify.save();
+      res.json({ message: "connection request sent" });
+    }
   } catch (err) {
     res.json({ message: "server error" });
   }
@@ -106,7 +111,7 @@ router.get("/:id", checkauth, async (req, res) => {
     { $pull: { conRequests: requesterid } }
   );
 
-  const resp = await User.updateOne(
+  const resp2 = await User.updateOne(
     { _id: requesterId },
     { $pull: { conRequestsSent: req.userId } }
   );
@@ -154,14 +159,14 @@ router.get("/requestsent", checkauth, async (req, res) => {
 });
 
 // cancel a previous contact request. just remove your id from toID's conRequest arr
-router.get("/:id", checkauth, async (req, res) => {
+router.get("/cancelrequest/:id", checkauth, async (req, res) => {
   const toId = req.params.id;
 
   const resp = await User.updateOne(
     { _id: toId },
     { $pull: { conRequests: req.userId } }
   );
-  const resp = await User.updateOne(
+  const resp2 = await User.updateOne(
     { _id: req.userId },
     { $pull: { conRequestsSent: req.userId } }
   );
@@ -170,7 +175,7 @@ router.get("/:id", checkauth, async (req, res) => {
 });
 
 // remove contact
-router.get("/", checkauth, async (req, res) => {
+router.get("/deletecontact/:id", checkauth, async (req, res) => {
   // remove his id from current user connections array
   const toBeRemoveId = req.params.id;
   const cuId = req.userId;
@@ -182,7 +187,7 @@ router.get("/", checkauth, async (req, res) => {
 });
 
 // block a user
-router.get("/", checkauth, async (req, res) => {
+router.get("/block/:id", checkauth, async (req, res) => {
   const idtoblock = req.params.idtoblock;
   const resp = await User.updateOne(
     { _id: req.userId },
@@ -192,7 +197,7 @@ router.get("/", checkauth, async (req, res) => {
 });
 
 // unblock a user
-router.get("/", checkauth, async (req, res) => {
+router.get("/unblock/:id", checkauth, async (req, res) => {
   const blockedId = req.params.blockedid;
   const resp = await User.updateOne(
     { _id: req.userId },

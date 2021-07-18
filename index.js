@@ -11,6 +11,8 @@ import jobApplicationRoutes from "./routes/jobApplicationRoutes.js";
 import commentRoutes from "./routes/commentsRoutes.js";
 import sendMessageRoutes from "./routes/sendMessageRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
+import navalertsroutes from "./routes/navalertsroutes.js";
+import connectionRoutes from "./routes/connectionRoutes.js";
 
 import cors from "cors";
 const app = express();
@@ -46,3 +48,5 @@ app.use("/posts", postsRoutes);
 app.use("/comments", commentRoutes);
 app.use("/messages", sendMessageRoutes);
 app.use("/notifications", notificationRoutes);
+app.use("/navalerts", navalertsroutes);
+app.use("/connections", connectionRoutes);
